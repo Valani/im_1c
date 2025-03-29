@@ -31,6 +31,13 @@ class ModelExtensionModuleImport1C extends Model {
         // Remove any special characters that might cause issues
         $name = preg_replace('/[^\p{L}\p{N}\s\-\.\,\"\']/u', '', $name);
         
+        // Replace quotes with HTML entities to ensure proper display and avoid SQL issues
+        $name = str_replace(
+            ['"', "'", '«', '»'], 
+            ['&quot;', '&#39;', '&laquo;', '&raquo;'], 
+            $name
+        );
+        
         // Trim whitespace
         $name = trim($name);
         
