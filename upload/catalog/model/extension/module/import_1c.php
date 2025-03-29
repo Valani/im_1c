@@ -1,7 +1,7 @@
 <?php
 class ModelExtensionModuleImport1C extends Model {
     // Constants
-    const DEFAULT_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/products_test.xml';
+    const DEFAULT_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/products.xml';
     const DEFAULT_PER_PAGE = 10000;
     const DEFAULT_CATEGORY_ID = 511;
     const DEFAULT_STOCK_STATUS_ID = 7;
@@ -530,6 +530,16 @@ class ModelExtensionModuleImport1C extends Model {
         return $image_files;
     }
     
+    // Debug function to log queries
+    private function debugLog($message) {
+        $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+        if (!is_dir($log_dir)) {
+            @mkdir($log_dir, 0755, true);
+        }
+        $log_file = $log_dir . 'sql_debug_' . date('Y-m-d') . '.log';
+        @file_put_contents($log_file, date('Y-m-d H:i:s') . " " . $message . "\n\n", FILE_APPEND);
+    }
+    
     // Import users from XML file
     public function importUsers() {
         $created = 0;
@@ -542,6 +552,9 @@ class ModelExtensionModuleImport1C extends Model {
         $skipped_users_log = [];
         
         try {
+            // Debug version information
+            $this->debugLog("Starting user import - Version 2025-03-29-17:45");
+            
             // Check if file exists
             if (!file_exists(self::USERS_FILE_PATH)) {
                 throw new Exception('Users file not found: ' . self::USERS_FILE_PATH);
@@ -563,15 +576,25 @@ class ModelExtensionModuleImport1C extends Model {
             foreach ($xml->user as $user) {
                 $user_id = trim(strval($user->id));
                 $email = trim(strval($user->email));
+                $name = trim(strval($user->name));
                 
                 // Skip users with invalid email
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     $skipped++;
+                    $skipped_users_log[] = [
+                        'id' => $user_id, 
+                        'name' => $name, 
+                        'email' => $email, 
+                        'reason' => 'Invalid email format'
+                    ];
                     continue;
                 }
                 
                 // Add user ID to list of valid IDs
                 $valid_user_ids[] = $user_id;
+                
+                // Add email to list of valid emails (for SQL query)
+                $valid_user_emails[] = $this->db->escape($email);
                 
                 // Process user name (split into first name and last name)
                 $full_name = trim(strval($user->name));
@@ -579,9 +602,27 @@ class ModelExtensionModuleImport1C extends Model {
                 $firstname = $name_parts[0];
                 $lastname = isset($name_parts[1]) ? $name_parts[1] : '';
                 
+                // Log name processing
+                if (empty($firstname)) {
+                    $skipped_users_log[] = [
+                        'id' => $user_id, 
+                        'name' => $full_name, 
+                        'email' => $email, 
+                        'reason' => 'Empty first name after processing'
+                    ];
+                }
+                
                 // Validate and process phone number
                 $phone = trim(strval($user->phone));
                 if (!preg_match('/^[0-9]{10}$/', $phone)) {
+                    // Log invalid phone number
+                    $skipped_users_log[] = [
+                        'id' => $user_id, 
+                        'name' => $full_name, 
+                        'email' => $email, 
+                        'phone' => $phone,
+                        'reason' => 'Invalid phone format (not 10 digits)'
+                    ];
                     $phone = ''; // Reset invalid phone
                 }
                 
@@ -620,34 +661,39 @@ class ModelExtensionModuleImport1C extends Model {
                     // Update existing user
                     $customer_id = $existing_user->row['customer_id'];
                     
-                    $this->db->query("UPDATE " . DB_PREFIX . "customer SET 
+                    // Debug: Log the SQL query that will be executed
+                    $update_query = "UPDATE " . DB_PREFIX . "customer SET 
                         customer_group_id = " . (int)$customer_group_id . ",
                         firstname = '" . $this->db->escape($firstname) . "',
                         lastname = '" . $this->db->escape($lastname) . "',
                         telephone = '" . $this->db->escape($phone) . "',
                         password = '" . $this->db->escape($password_hash) . "',
-                        salt = '" . $this->db->escape($salt) . "',
-                        date_modified = NOW()
-                        WHERE customer_id = " . (int)$customer_id);
+                        salt = '" . $this->db->escape($salt) . "'
+                        WHERE customer_id = " . (int)$customer_id;
+                    
+                    $this->debugLog("Executing SQL query: " . $update_query);
+                    
+                    // Execute update query without date_modified column
+                    $this->db->query($update_query);
                     
                     $updated++;
                 }
             }
             
             // Get all customers from database and remove those not in XML
-            if (!empty($valid_user_ids)) {
+            if (!empty($valid_user_emails)) {
                 // Get all customers except the ones with emails in the valid list
                 $all_customers_query = $this->db->query("SELECT c.customer_id, c.email FROM " . DB_PREFIX . "customer c
-                    LEFT JOIN " . DB_PREFIX . "customer_affiliate ca ON (c.customer_id = ca.customer_id)
-                    WHERE c.email NOT IN (
-                        SELECT email FROM " . DB_PREFIX . "customer 
-                        WHERE email IN (
-                            SELECT DISTINCT email FROM " . DB_PREFIX . "customer 
-                            WHERE email IN ('" . implode("','", array_map([$this->db, 'escape'], $valid_user_ids)) . "')
-                        )
-                    )");
+                    WHERE c.email NOT IN ('" . implode("','", $valid_user_emails) . "')");
                 
                 foreach ($all_customers_query->rows as $customer) {
+                    // Log the customers being deleted
+                    $skipped_users_log[] = [
+                        'email' => $customer['email'],
+                        'customer_id' => $customer['customer_id'],
+                        'reason' => 'User deleted - not found in XML import file'
+                    ];
+                    
                     // Delete customer and all related data
                     $this->db->query("DELETE FROM " . DB_PREFIX . "customer WHERE customer_id = " . (int)$customer['customer_id']);
                     $this->db->query("DELETE FROM " . DB_PREFIX . "customer_activity WHERE customer_id = " . (int)$customer['customer_id']);
@@ -667,17 +713,68 @@ class ModelExtensionModuleImport1C extends Model {
             // Commit transaction
             $this->db->query("COMMIT");
             
+            // Write skipped users log to file for debugging
+            if (!empty($skipped_users_log)) {
+                // Log file path - use system/storage/logs if DIR_LOGS constant is not available
+                $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+                
+                // Ensure log directory exists
+                if (!is_dir($log_dir)) {
+                    @mkdir($log_dir, 0755, true);
+                }
+                
+                $log_file = $log_dir . 'user_import_' . date('Y-m-d') . '.log';
+                
+                // Log message
+                $log_message = date('Y-m-d H:i:s') . " User import details:\n" . 
+                               json_encode($skipped_users_log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+                
+                // Write to log using file_put_contents with error suppression
+                @file_put_contents($log_file, $log_message, FILE_APPEND);
+                
+                // Fallback to error_log if file_put_contents fails
+                if (!file_exists($log_file)) {
+                    error_log("User import details: " . count($skipped_users_log) . " skipped users. File write failed.");
+                }
+            }
+            
             return [
                 'created' => $created,
                 'updated' => $updated,
                 'deleted' => $deleted,
                 'skipped' => $skipped,
-                'errors' => $errors
+                'errors' => $errors,
+                'skipped_users' => $skipped_users_log
             ];
             
         } catch (Exception $e) {
             // Rollback transaction in case of error
             $this->db->query("ROLLBACK");
+            
+            // Write skipped users log to file for debugging
+            if (!empty($skipped_users_log)) {
+                // Log file path - use system/storage/logs if DIR_LOGS constant is not available
+                $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+                
+                // Ensure log directory exists
+                if (!is_dir($log_dir)) {
+                    @mkdir($log_dir, 0755, true);
+                }
+                
+                $log_file = $log_dir . 'user_import_' . date('Y-m-d') . '.log';
+                
+                // Log message with error information
+                $log_message = date('Y-m-d H:i:s') . " User import error: " . $e->getMessage() . "\n" .
+                               json_encode($skipped_users_log, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+                
+                // Write to log using file_put_contents with error suppression
+                @file_put_contents($log_file, $log_message, FILE_APPEND);
+                
+                // Fallback to error_log if file_put_contents fails
+                if (!file_exists($log_file)) {
+                    error_log("User import error: " . $e->getMessage() . ". " . count($skipped_users_log) . " skipped users. File write failed.");
+                }
+            }
             
             return [
                 'created' => $created,
@@ -685,7 +782,8 @@ class ModelExtensionModuleImport1C extends Model {
                 'deleted' => $deleted,
                 'skipped' => $skipped,
                 'errors' => $errors + 1,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
+                'skipped_users' => $skipped_users_log
             ];
         }
     }

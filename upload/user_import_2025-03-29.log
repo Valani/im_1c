@@ -1,0 +1,658 @@
+2025-03-29 15:33:48 User import error: Error: Unknown column 'date_modified' in 'field list'<br />Error No: 1054<br />UPDATE oc_customer SET 
+                        customer_group_id = 2,
+                        firstname = 'Ленько',
+                        lastname = 'Ігор (Кос Анатольського)',
+                        telephone = '0932725735',
+                        password = 'eed2187aa2bad85637c8601fd3962b729f69b9d7',
+                        salt = 'd1838d0ad',
+                        date_modified = NOW()
+                        WHERE customer_id = 38
+[
+    {
+        "id": "2486",
+        "name": "ФОП Фурдас Ганна Михайлівна",
+        "email": "dum.ok@ukr.net",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "378",
+        "name": "Петришин А.В.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2561",
+        "name": "ФОП Федишин Василь Григорович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2333",
+        "name": "ФОП Коваль А.В.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2410",
+        "name": "ФОП Коваль У.М.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2591",
+        "name": "АГК \"ЗА ВИННИЦЕЮ\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2543",
+        "name": "Бобик Ольга Олегівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2535",
+        "name": "Карпа Ігор",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2451",
+        "name": "КП ЕКОУСТРІЙ",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1445",
+        "name": "Кулик Леся Романівна",
+        "email": "",
+        "reason": "Invalid email format"
+    }
+]
+
+2025-03-29 15:38:33 User import details:
+[
+    {
+        "id": "2486",
+        "name": "ФОП Фурдас Ганна Михайлівна",
+        "email": "dum.ok@ukr.net",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "378",
+        "name": "Петришин А.В.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2561",
+        "name": "ФОП Федишин Василь Григорович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2333",
+        "name": "ФОП Коваль А.В.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2410",
+        "name": "ФОП Коваль У.М.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2591",
+        "name": "АГК \"ЗА ВИННИЦЕЮ\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2543",
+        "name": "Бобик Ольга Олегівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2535",
+        "name": "Карпа Ігор",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2451",
+        "name": "КП ЕКОУСТРІЙ",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1445",
+        "name": "Кулик Леся Романівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "136",
+        "name": "Маковецький Степан",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2538",
+        "name": "Поліщук О.М",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1603",
+        "name": "ПП Різник Б.Р.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1446",
+        "name": "Рубан Анатолій",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1764",
+        "name": "Стадник Галина",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2583",
+        "name": "ФОП Бойченко О.Г,",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2554",
+        "name": "ФОП Вишинська Іванна Ігорівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2479",
+        "name": "ФОП Єзерська Вікторія Володимирівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2555",
+        "name": "ФОП Мазепа Ганна Євгенівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2460",
+        "name": "ФОП Нос Надія Богданівна",
+        "email": "nosnadia777@gmail.com",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "2496",
+        "name": "ФОП Романів А.В.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2580",
+        "name": "ФОП Тягло Роксолана",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2518",
+        "name": "ФОП Федина Наталія Іванівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "53",
+        "name": "Валя БТІ",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "345",
+        "name": "Гадомська  Христина",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1995",
+        "name": "ПП Ващук Леся Ярославівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2412",
+        "name": "ПП Величко Олександр Володимирович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "199",
+        "name": "ПП Маслиган І.В.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2026",
+        "name": "ФОП Каспришин В.І.",
+        "email": "marinakasp@gmail.com",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "2348",
+        "name": "ФОП Павліш Світлана",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2523",
+        "name": "ФОП Новосад Ігор Сергійович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1491",
+        "name": "маг\"Від А до Я\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2545",
+        "name": "ФОП Добровольська Ганна Сергіївна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2546",
+        "name": "ФОП Калита Микола Павлович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2547",
+        "name": "ФОП Панькевич Василь Григорович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2548",
+        "name": "ФОП Панькевич Оксана Романівна",
+        "email": "ox.pankewi42015@meta.ua",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "2507",
+        "name": "Гайдамацька",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2584",
+        "name": "ГО \"ТЕХ СТАРТАП СКУЛ\"",
+        "email": "11@111.11",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2425",
+        "name": "ПП \"ПРОМ-ПОСТАЧ\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2422",
+        "name": "ТзОВ \"АГРОНОМ ЦЕНТР\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2332",
+        "name": "ТЗоВ \"Вегло-Стал\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2587",
+        "name": "ТЗОВ \"ВЕСТМАУНТ\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2463",
+        "name": "ТЗОВ \"УК \"ЗБОЇЩА\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2517",
+        "name": "ТзОВ \"ФОРЕСТ ДРІМ\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2574",
+        "name": "ТЗОВ «КСК КАПІТАЛ»",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2586",
+        "name": "ТОВ \"ВІЗАНТІЯ 1\"",
+        "email": "mtacoblik17062024@gmail.com",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "2512",
+        "name": "ТОВ \"Глобал Інжиніринг Консалтинг\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2343",
+        "name": "ТОВ \"НВП\"Транс Лок\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2592",
+        "name": "ТОВ \"НОВИЙ ДИЗАЙН\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2413",
+        "name": "ТОВ \"ПБО \"РОЗВИТОК\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2521",
+        "name": "ТОВ \"ТІАС-БУД\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "50",
+        "name": "1-ша жовківська школа",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "45",
+        "name": "12-та червоноградська школа",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "42",
+        "name": "3-тя червоноградська школа",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2553",
+        "name": "АРЗ СП ГУ ДСНС",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2214",
+        "name": "Гавронська Любов Михайлівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "373",
+        "name": "Коцвай Наталя",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "351",
+        "name": "Лесюк Юрій\/Людмила",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "367",
+        "name": "Наталя Червоноград",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1463",
+        "name": "Оксана Адамівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2035",
+        "name": "Полагнюк Мирослава Василівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2248",
+        "name": "ТОВ \"ЗАХІД ПРО\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1577",
+        "name": "ТОВ \"Маркостиль\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1663",
+        "name": "Томашевський Володимир Ярославович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2539",
+        "name": "ФОП Карпа Ігор Михайлович",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2401",
+        "name": "ФОП Коротич М.П",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1558",
+        "name": "ФОП Сидоренко Євген",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "41",
+        "name": "ФОП Слука Г.І.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2490",
+        "name": "КЗ ЛОР НРЦ \"Мрія\"",
+        "email": "nrcmriya@gmail.com",
+        "phone": "",
+        "reason": "Invalid phone format (not 10 digits)"
+    },
+    {
+        "id": "1597",
+        "name": "Панькевич Оксана Романівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2215",
+        "name": "ТзОВ \"Амарі Україна\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1483",
+        "name": "Барбадин  Наталя Орестівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2564",
+        "name": "Благодійний фонд \"Маленькі мрії\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1727",
+        "name": "Благодійний фонд \"Нова Країна\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1615",
+        "name": "Бучак Андрій",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2481",
+        "name": "КЗ \"Дитячо-юнацька спортивна школа ім.А.Білого\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "19",
+        "name": "Маслянка",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1726",
+        "name": "Мотиль Наталія Степанівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "257",
+        "name": "Надя Чорна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1644",
+        "name": "Обласне комунальне підприємство Львівської обласної ради \"Профілактич",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2008",
+        "name": "Петровський С.Т",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1529",
+        "name": "ПП Бернат І.Р.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2069",
+        "name": "ПП Колесник Ірина Степанівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1452",
+        "name": "ПрАТ \"Електро\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "279",
+        "name": "Приватне підприємство \"Ваша Преса\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "17",
+        "name": "Смерека Степан",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "1585",
+        "name": "Стефанюк Іра",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2525",
+        "name": "ТзОВ \"Бетта\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2472",
+        "name": "ТзОВ \"Вента Рітейл\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2579",
+        "name": "ТзОВ \"ОПЕНТЕК+\"",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2037",
+        "name": "ФОП Кулик Ю.С.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2477",
+        "name": "ФОП Морозова Ірина Ярославівна",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2039",
+        "name": "ФОП Паращич Х.Б.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2321",
+        "name": "ФОП Скрипник Галина",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "id": "2234",
+        "name": "ФОП Шпильовий В.М.",
+        "email": "",
+        "reason": "Invalid email format"
+    },
+    {
+        "email": "cas23473@gmail.com",
+        "customer_id": "29",
+        "reason": "User deleted - not found in XML import file"
+    }
+]
+
