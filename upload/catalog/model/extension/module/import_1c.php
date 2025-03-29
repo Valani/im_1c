@@ -397,12 +397,21 @@ class ModelExtensionModuleImport1C extends Model {
         // Видаляємо дефіс в кінці, якщо він залишився після обрізання
         $text = rtrim($text, '-');
         
-        // Check for uniqueness of the slug
-        $exists = $this->db->query("SELECT COUNT(*) as total FROM " . DB_PREFIX . "seo_url WHERE `keyword` = '" . $this->db->escape($text) . "'");
+        // Check for uniqueness of the slug and add sequential numbering if needed
+        $base_slug = $text;
+        $counter = 1;
         
-        if ($exists->row['total'] > 0) {
-            // If slug is not unique, add a random suffix
-            $text = $text . '-' . substr(md5(mt_rand()), 0, 5);
+        while (true) {
+            $exists = $this->db->query("SELECT COUNT(*) as total FROM " . DB_PREFIX . "seo_url WHERE `keyword` = '" . $this->db->escape($text) . "'");
+            
+            if ($exists->row['total'] == 0) {
+                // Slug is unique, we can use it
+                break;
+            }
+            
+            // Add sequential number to the slug
+            $text = $base_slug . '-' . $counter;
+            $counter++;
         }
         
         return $text;
