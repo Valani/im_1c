@@ -7,8 +7,10 @@ class ModelExtensionModuleImport1C extends Model {
     const DEFAULT_STOCK_STATUS_ID = 7;
     const DEFAULT_LANGUAGE_ID = 3;
     const WHOLESALE_CUSTOMER_GROUP_ID = 2;
+    const RETAIL_CUSTOMER_GROUP_ID = 1;
     const IMAGES_SOURCE_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/';
     const IMAGES_TARGET_DIR = '/home/cr548725/feniks-lviv.com.ua/www/image/catalog/products/';
+    const USERS_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/users_test.xml';
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -526,5 +528,168 @@ class ModelExtensionModuleImport1C extends Model {
         }
         
         return $image_files;
+    }
+    
+    // Import users from XML file
+    public function importUsers() {
+        $created = 0;
+        $updated = 0;
+        $deleted = 0;
+        $skipped = 0;
+        $errors = 0;
+        $valid_user_ids = [];
+        
+        try {
+            // Check if file exists
+            if (!file_exists(self::USERS_FILE_PATH)) {
+                throw new Exception('Users file not found: ' . self::USERS_FILE_PATH);
+            }
+            
+            // Read file and convert encoding from Windows-1251 to UTF-8 if needed
+            $xml_content = file_get_contents(self::USERS_FILE_PATH);
+            
+            // Check if content is in Windows-1251 and convert if needed
+            if (!mb_check_encoding($xml_content, 'UTF-8')) {
+                $xml_content = mb_convert_encoding($xml_content, 'UTF-8', 'Windows-1251');
+            }
+            
+            // Load XML
+            $xml = simplexml_load_string($xml_content);
+            if (!$xml) {
+                throw new Exception('Error parsing users XML file');
+            }
+            
+            // Start transaction for database integrity
+            $this->db->query("START TRANSACTION");
+            
+            // Process each user in XML
+            foreach ($xml->user as $user) {
+                $user_id = trim(strval($user->id));
+                $email = trim(strval($user->email));
+                
+                // Skip users with invalid email
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    $skipped++;
+                    continue;
+                }
+                
+                // Add user ID to list of valid IDs
+                $valid_user_ids[] = $user_id;
+                
+                // Process user name (split into first name and last name)
+                $full_name = trim(strval($user->name));
+                $name_parts = explode(' ', $full_name, 2);
+                $firstname = $name_parts[0];
+                $lastname = isset($name_parts[1]) ? $name_parts[1] : '';
+                
+                // Validate and process phone number
+                $phone = trim(strval($user->phone));
+                if (!preg_match('/^[0-9]{10}$/', $phone)) {
+                    $phone = ''; // Reset invalid phone
+                }
+                
+                // Determine customer group
+                $price_type = intval(strval($user->price_type));
+                $customer_group_id = ($price_type == 7) ? self::WHOLESALE_CUSTOMER_GROUP_ID : self::RETAIL_CUSTOMER_GROUP_ID;
+                
+                // Get password from XML
+                $password = trim(strval($user->password));
+                
+                // Prepare password for OpenCart (use OpenCart's password hashing method)
+                $salt = substr(md5(mt_rand()), 0, 9);
+                $password_hash = sha1($salt . sha1($salt . sha1($password)));
+                
+                // Check if user exists in database
+                $existing_user = $this->db->query("SELECT customer_id FROM " . DB_PREFIX . "customer WHERE email = '" . $this->db->escape($email) . "'");
+                
+                if ($existing_user->num_rows == 0) {
+                    // Create new user
+                    $this->db->query("INSERT INTO " . DB_PREFIX . "customer SET 
+                        customer_group_id = " . (int)$customer_group_id . ",
+                        store_id = 0,
+                        language_id = " . self::DEFAULT_LANGUAGE_ID . ",
+                        firstname = '" . $this->db->escape($firstname) . "',
+                        lastname = '" . $this->db->escape($lastname) . "',
+                        email = '" . $this->db->escape($email) . "',
+                        telephone = '" . $this->db->escape($phone) . "',
+                        password = '" . $this->db->escape($password_hash) . "',
+                        salt = '" . $this->db->escape($salt) . "',
+                        status = 1,
+                        ip = '" . $this->db->escape($this->request->server['REMOTE_ADDR']) . "',
+                        date_added = NOW()");
+                    
+                    $created++;
+                } else {
+                    // Update existing user
+                    $customer_id = $existing_user->row['customer_id'];
+                    
+                    $this->db->query("UPDATE " . DB_PREFIX . "customer SET 
+                        customer_group_id = " . (int)$customer_group_id . ",
+                        firstname = '" . $this->db->escape($firstname) . "',
+                        lastname = '" . $this->db->escape($lastname) . "',
+                        telephone = '" . $this->db->escape($phone) . "',
+                        password = '" . $this->db->escape($password_hash) . "',
+                        salt = '" . $this->db->escape($salt) . "',
+                        date_modified = NOW()
+                        WHERE customer_id = " . (int)$customer_id);
+                    
+                    $updated++;
+                }
+            }
+            
+            // Get all customers from database and remove those not in XML
+            if (!empty($valid_user_ids)) {
+                // Get all customers except the ones with emails in the valid list
+                $all_customers_query = $this->db->query("SELECT c.customer_id, c.email FROM " . DB_PREFIX . "customer c
+                    LEFT JOIN " . DB_PREFIX . "customer_affiliate ca ON (c.customer_id = ca.customer_id)
+                    WHERE c.email NOT IN (
+                        SELECT email FROM " . DB_PREFIX . "customer 
+                        WHERE email IN (
+                            SELECT DISTINCT email FROM " . DB_PREFIX . "customer 
+                            WHERE email IN ('" . implode("','", array_map([$this->db, 'escape'], $valid_user_ids)) . "')
+                        )
+                    )");
+                
+                foreach ($all_customers_query->rows as $customer) {
+                    // Delete customer and all related data
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_activity WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_affiliate WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_approval WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_history WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_ip WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_reward WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_transaction WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "customer_wishlist WHERE customer_id = " . (int)$customer['customer_id']);
+                    $this->db->query("DELETE FROM " . DB_PREFIX . "address WHERE customer_id = " . (int)$customer['customer_id']);
+                    
+                    $deleted++;
+                }
+            }
+            
+            // Commit transaction
+            $this->db->query("COMMIT");
+            
+            return [
+                'created' => $created,
+                'updated' => $updated,
+                'deleted' => $deleted,
+                'skipped' => $skipped,
+                'errors' => $errors
+            ];
+            
+        } catch (Exception $e) {
+            // Rollback transaction in case of error
+            $this->db->query("ROLLBACK");
+            
+            return [
+                'created' => $created,
+                'updated' => $updated,
+                'deleted' => $deleted,
+                'skipped' => $skipped,
+                'errors' => $errors + 1,
+                'message' => $e->getMessage()
+            ];
+        }
     }
 }
