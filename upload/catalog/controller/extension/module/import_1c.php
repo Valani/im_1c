@@ -21,7 +21,10 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Запуск імпорту зображень товарів
         $images_result = $this->model_extension_module_import_1c->importProductImages();
         
-        // Запуск імпорту користувачів
+        // Конвертування файлу користувачів з Windows-1251 в UTF-8
+        $this->load->controller('extension/module/convert_encoding/cron');
+        
+        // Запуск імпорту користувачів (після конвертування)
         $users_result = $this->model_extension_module_import_1c->importUsers();
         
         // Виведення результатів

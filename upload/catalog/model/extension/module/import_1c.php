@@ -10,7 +10,7 @@ class ModelExtensionModuleImport1C extends Model {
     const RETAIL_CUSTOMER_GROUP_ID = 1;
     const IMAGES_SOURCE_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/';
     const IMAGES_TARGET_DIR = '/home/cr548725/feniks-lviv.com.ua/www/image/catalog/products/';
-    const USERS_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/users_test.xml';
+    const USERS_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/users_utf.xml';
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -538,6 +538,8 @@ class ModelExtensionModuleImport1C extends Model {
         $skipped = 0;
         $errors = 0;
         $valid_user_ids = [];
+        $valid_user_emails = [];
+        $skipped_users_log = [];
         
         try {
             // Check if file exists
@@ -545,16 +547,11 @@ class ModelExtensionModuleImport1C extends Model {
                 throw new Exception('Users file not found: ' . self::USERS_FILE_PATH);
             }
             
-            // Read file and convert encoding from Windows-1251 to UTF-8 if needed
+            // Read file content (now using the pre-converted UTF-8 file)
             $xml_content = file_get_contents(self::USERS_FILE_PATH);
             
-            // Check if content is in Windows-1251 and convert if needed
-            if (!mb_check_encoding($xml_content, 'UTF-8')) {
-                $xml_content = mb_convert_encoding($xml_content, 'UTF-8', 'Windows-1251');
-            }
-            
-            // Load XML
-            $xml = simplexml_load_string($xml_content);
+            // Load XML with LIBXML_NOENT flag to handle entities
+            $xml = simplexml_load_string($xml_content, 'SimpleXMLElement', LIBXML_NOENT | LIBXML_NOCDATA);
             if (!$xml) {
                 throw new Exception('Error parsing users XML file');
             }
