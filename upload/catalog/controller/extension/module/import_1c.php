@@ -31,6 +31,9 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Запуск імпорту користувачів (після конвертування)
         $users_result = $this->model_extension_module_import_1c->importUsers();
         
+        // Export orders to XML
+        $orders_result = $this->model_extension_module_import_1c->exportOrders();
+        
         // Виведення результатів
         $response = [
             'prices_updated' => $prices_result['updated'],
@@ -42,7 +45,8 @@ class ControllerExtensionModuleImport1C extends Controller {
             'users_updated' => $users_result['updated'],
             'users_deleted' => $users_result['deleted'],
             'users_skipped' => $users_result['skipped'],
-            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors'] + $users_result['errors']
+            'orders_exported' => isset($orders_result['exported']) ? $orders_result['exported'] : 0,
+            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors'] + $users_result['errors'] + (isset($orders_result['errors']) ? $orders_result['errors'] : 0)
         ];
         
         // Include skipped users details if they exist (limit to first 10 for JSON response size)
@@ -51,6 +55,41 @@ class ControllerExtensionModuleImport1C extends Controller {
             $response['skipped_users_sample'] = array_slice($users_result['skipped_users'], 0, 10);
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
             $response['skipped_users_log'] = 'See detailed log in ' . $log_dir . 'user_import_' . date('Y-m-d') . '.log';
+        }
+        
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    
+    /**
+     * Export Orders to XML via CRON
+     * Can be called separately for more frequent order exports
+     */
+    public function exportOrdersCron() {
+        // Optional IP security check
+        // if (!in_array($this->request->server['REMOTE_ADDR'], ['127.0.0.1', 'your_server_ip'])) {
+        //     exit('Access denied');
+        // }
+        
+        $this->load->model('extension/module/import_1c');
+        
+        // Export orders to XML
+        $orders_result = $this->model_extension_module_import_1c->exportOrders();
+        
+        // Prepare the response
+        $response = [
+            'orders_exported' => $orders_result['exported'],
+            'errors' => $orders_result['errors']
+        ];
+        
+        // Include detailed results if available
+        if (isset($orders_result['results']) && !empty($orders_result['results'])) {
+            $response['results'] = $orders_result['results'];
+        }
+        
+        // Include error message if available
+        if (isset($orders_result['message'])) {
+            $response['message'] = $orders_result['message'];
         }
         
         $this->response->addHeader('Content-Type: application/json');

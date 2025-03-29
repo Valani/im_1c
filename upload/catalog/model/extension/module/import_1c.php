@@ -11,6 +11,7 @@ class ModelExtensionModuleImport1C extends Model {
     const IMAGES_SOURCE_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/';
     const IMAGES_TARGET_DIR = '/home/cr548725/feniks-lviv.com.ua/www/image/catalog/products/';
     const USERS_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/users_utf.xml';
+    const ORDERS_EXPORT_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/orders';
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -784,6 +785,216 @@ class ModelExtensionModuleImport1C extends Model {
                 'errors' => $errors + 1,
                 'message' => $e->getMessage(),
                 'skipped_users' => $skipped_users_log
+            ];
+        }
+    }
+    
+    /**
+     * Export orders to XML
+     * Creates XML files for orders with status not equal to 5 (processed)
+     * and updates the order status to 5 after exporting
+     * 
+     * @return array Results of the export operation
+     */
+    public function exportOrders() {
+        $exported = 0;
+        $errors = 0;
+        $results = [];
+        
+        try {
+            // Create orders export directory if it doesn't exist
+            if (!is_dir(self::ORDERS_EXPORT_DIR)) {
+                if (!mkdir(self::ORDERS_EXPORT_DIR, 0755, true)) {
+                    throw new Exception('Failed to create orders export directory: ' . self::ORDERS_EXPORT_DIR);
+                }
+            }
+            
+            // Get orders with status not equal to 5 (processed/exported)
+            $orders_query = $this->db->query("SELECT o.* FROM " . DB_PREFIX . "order o WHERE o.order_status_id != 5");
+            
+            if ($orders_query->num_rows === 0) {
+                return ['exported' => 0, 'errors' => 0, 'message' => 'No orders to export'];
+            }
+            
+            foreach ($orders_query->rows as $order) {
+                try {
+                    // Get order products
+                    $products_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_product 
+                        WHERE order_id = " . (int)$order['order_id']);
+                    
+                    if ($products_query->num_rows === 0) {
+                        throw new Exception("No products found for order #" . $order['order_id']);
+                    }
+                    
+                    // Get order totals
+                    $totals_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "order_total 
+                        WHERE order_id = " . (int)$order['order_id'] . " 
+                        ORDER BY sort_order ASC");
+                    
+                    // Create XML document
+                    $dom = new DOMDocument('1.0', 'UTF-8');
+                    $dom->formatOutput = true;
+                    
+                    // Root element
+                    $orders = $dom->createElement('orders');
+                    $dom->appendChild($orders);
+                    
+                    // Order element
+                    $order_elem = $dom->createElement('order');
+                    $orders->appendChild($order_elem);
+                    
+                    // Order ID
+                    $id_elem = $dom->createElement('id', $order['order_id']);
+                    $order_elem->appendChild($id_elem);
+                    
+                    // Customer information
+                    $customer = $dom->createElement('customer');
+                    $order_elem->appendChild($customer);
+                    
+                    // Full name (firstname + lastname)
+                    $name = trim($order['firstname'] . ' ' . $order['lastname']);
+                    $name_elem = $dom->createElement('name');
+                    $name_elem->appendChild($dom->createTextNode($name));
+                    $customer->appendChild($name_elem);
+                    
+                    // Phone
+                    $phone_elem = $dom->createElement('phone');
+                    $phone_elem->appendChild($dom->createTextNode($order['telephone']));
+                    $customer->appendChild($phone_elem);
+                    
+                    // Email
+                    $email_elem = $dom->createElement('email');
+                    $email_elem->appendChild($dom->createTextNode($order['email']));
+                    $customer->appendChild($email_elem);
+                    
+                    // Shipping address
+                    $address = '';
+                    
+                    // Build address from shipping info
+                    if (!empty($order['shipping_zone'])) {
+                        $address .= $order['shipping_zone'];
+                    }
+                    
+                    if (!empty($order['shipping_city'])) {
+                        if (!empty($address)) $address .= ', ';
+                        $address .= $order['shipping_city'];
+                    }
+                    
+                    if (!empty($order['shipping_address_1'])) {
+                        if (!empty($address)) $address .= ', ';
+                        $address .= $order['shipping_address_1'];
+                    }
+                    
+                    if (!empty($order['shipping_address_2'])) {
+                        if (!empty($address)) $address .= ', ';
+                        $address .= $order['shipping_address_2'];
+                    }
+                    
+                    // If shipping address is empty, use payment address
+                    if (empty($address)) {
+                        if (!empty($order['payment_zone'])) {
+                            $address .= $order['payment_zone'];
+                        }
+                        
+                        if (!empty($order['payment_city'])) {
+                            if (!empty($address)) $address .= ', ';
+                            $address .= $order['payment_city'];
+                        }
+                        
+                        if (!empty($order['payment_address_1'])) {
+                            if (!empty($address)) $address .= ', ';
+                            $address .= $order['payment_address_1'];
+                        }
+                        
+                        if (!empty($order['payment_address_2'])) {
+                            if (!empty($address)) $address .= ', ';
+                            $address .= $order['payment_address_2'];
+                        }
+                    }
+                    
+                    // Add shipping method if available
+                    if (!empty($order['shipping_method'])) {
+                        if (!empty($address)) $address .= ': ';
+                        $address .= $order['shipping_method'];
+                    }
+                    
+                    $address_elem = $dom->createElement('address');
+                    $address_elem->appendChild($dom->createTextNode($address));
+                    $customer->appendChild($address_elem);
+                    
+                    // Order date (extract date part from date_added)
+                    $date = date('Y-m-d', strtotime($order['date_added']));
+                    $date_elem = $dom->createElement('date', $date);
+                    $order_elem->appendChild($date_elem);
+                    
+                    // Products
+                    $products_elem = $dom->createElement('products');
+                    $order_elem->appendChild($products_elem);
+                    
+                    foreach ($products_query->rows as $product) {
+                        $product_elem = $dom->createElement('product');
+                        $products_elem->appendChild($product_elem);
+                        
+                        // Use model field as MPN (modify if your store uses a different field)
+                        $mpn_elem = $dom->createElement('mpn');
+                        $mpn_elem->appendChild($dom->createTextNode($product['model']));
+                        $product_elem->appendChild($mpn_elem);
+                        
+                        // Quantity
+                        $quantity_elem = $dom->createElement('quantity', (int)$product['quantity']);
+                        $product_elem->appendChild($quantity_elem);
+                        
+                        // Price (per unit)
+                        $price_elem = $dom->createElement('price', number_format((float)$product['price'], 2, '.', ''));
+                        $product_elem->appendChild($price_elem);
+                    }
+                    
+                    // Create file path with order_id as filename
+                    $file_path = self::ORDERS_EXPORT_DIR . '/' . $order['order_id'] . '.xml';
+                    
+                    // Save XML to file
+                    if ($dom->save($file_path)) {
+                        // Update order status to 5 (processed/exported)
+                        $this->db->query("UPDATE " . DB_PREFIX . "order SET 
+                            order_status_id = 5, 
+                            date_modified = NOW() 
+                            WHERE order_id = " . (int)$order['order_id']);
+                        
+                        $exported++;
+                        $results[] = "Order #" . $order['order_id'] . " exported to " . $file_path;
+                    } else {
+                        throw new Exception("Failed to save XML file for order #" . $order['order_id']);
+                    }
+                    
+                } catch (Exception $e) {
+                    $errors++;
+                    $results[] = "Error exporting order #" . $order['order_id'] . ": " . $e->getMessage();
+                    
+                    // Log the error using the debug log function
+                    $this->debugLog("Order export error for order #" . $order['order_id'] . ": " . $e->getMessage());
+                }
+            }
+            
+            // If no orders were exported, update the message
+            if ($exported === 0 && empty($results)) {
+                $results[] = "No orders were exported.";
+            }
+            
+            return [
+                'exported' => $exported,
+                'errors' => $errors,
+                'results' => $results
+            ];
+            
+        } catch (Exception $e) {
+            // Log the error using the debug log function
+            $this->debugLog("Order export general error: " . $e->getMessage());
+            
+            return [
+                'exported' => $exported,
+                'errors' => $errors + 1,
+                'message' => $e->getMessage(),
+                'results' => $results
             ];
         }
     }
