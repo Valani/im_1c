@@ -18,13 +18,18 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Запуск імпорту нових товарів
         $products_result = $this->model_extension_module_import_1c->importNewProducts();
         
+        // Запуск імпорту зображень товарів
+        $images_result = $this->model_extension_module_import_1c->importProductImages();
+        
         // Виведення результатів
         $this->response->addHeader('Content-Type: application/json');
         $this->response->setOutput(json_encode([
             'prices_updated' => $prices_result['updated'],
             'quantities_updated' => $quantities_result['updated'],
             'products_created' => $products_result['created'],
-            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors']
+            'images_updated' => $images_result['updated'],
+            'images_skipped' => $images_result['skipped'],
+            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors']
         ]));
     }
 }

@@ -7,6 +7,8 @@ class ModelExtensionModuleImport1C extends Model {
     const DEFAULT_STOCK_STATUS_ID = 7;
     const DEFAULT_LANGUAGE_ID = 3;
     const WHOLESALE_CUSTOMER_GROUP_ID = 2;
+    const IMAGES_SOURCE_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/';
+    const IMAGES_TARGET_DIR = '/home/cr548725/feniks-lviv.com.ua/www/image/catalog/products/';
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -415,5 +417,114 @@ class ModelExtensionModuleImport1C extends Model {
         }
         
         return $text;
+    }
+    
+    // Import product images from transfer directory
+    public function importProductImages() {
+        $updated = 0;
+        $skipped = 0;
+        $errors = 0;
+        $results = [];
+        
+        try {
+            // Create target directory if it doesn't exist
+            if (!is_dir(self::IMAGES_TARGET_DIR)) {
+                mkdir(self::IMAGES_TARGET_DIR, 0755, true);
+            }
+            
+            // Get all image files from the source directory and subdirectories
+            $image_files = $this->findImageFiles(self::IMAGES_SOURCE_DIR);
+            
+            foreach ($image_files as $image_file) {
+                // Get the filename without extension to use as SKU
+                $file_info = pathinfo($image_file);
+                $file_basename = $file_info['filename'];
+                $sku = $file_basename;
+                
+                // Find the product with this SKU
+                $product_query = $this->db->query("SELECT product_id, image FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($sku) . "'");
+                
+                if ($product_query->num_rows) {
+                    $product_id = $product_query->row['product_id'];
+                    $current_image = $product_query->row['image'];
+                    
+                    // Define target image path
+                    $new_image_name = 'catalog/products/' . $product_id . '.' . $file_info['extension'];
+                    $target_file_path = DIR_IMAGE . $new_image_name;
+                    
+                    // Check if the image already exists
+                    $update_needed = true;
+                    
+                    if (!empty($current_image) && file_exists(DIR_IMAGE . $current_image)) {
+                        // Check if the file is the same
+                        if (md5_file($image_file) === md5_file(DIR_IMAGE . $current_image)) {
+                            $update_needed = false;
+                            $skipped++;
+                        }
+                    }
+                    
+                    if ($update_needed) {
+                        // Copy image file to target directory with new name
+                        if (copy($image_file, $target_file_path)) {
+                            // Update the image record in the database
+                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
+                                image = '" . $this->db->escape($new_image_name) . "' 
+                                WHERE product_id = " . (int)$product_id);
+                            
+                            $updated++;
+                        } else {
+                            $errors++;
+                            $results[] = "Failed to copy image: " . $image_file;
+                        }
+                    }
+                }
+            }
+            
+            return [
+                'updated' => $updated, 
+                'skipped' => $skipped, 
+                'errors' => $errors,
+                'results' => $results
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'updated' => $updated, 
+                'skipped' => $skipped, 
+                'errors' => $errors + 1, 
+                'message' => $e->getMessage(),
+                'results' => $results
+            ];
+        }
+    }
+    
+    // Recursive function to find all image files in a directory and its subdirectories
+    private function findImageFiles($dir) {
+        $image_files = [];
+        $allowed_extensions = ['jpg', 'jpeg', 'png'];
+        
+        // Get all files in the current directory
+        $files = scandir($dir);
+        
+        foreach ($files as $file) {
+            if ($file == '.' || $file == '..') {
+                continue;
+            }
+            
+            $path = $dir . '/' . $file;
+            
+            if (is_dir($path)) {
+                // If this is a directory, recursively scan it
+                $image_files = array_merge($image_files, $this->findImageFiles($path));
+            } else {
+                // Check if this is an image file
+                $file_info = pathinfo($path);
+                if (isset($file_info['extension']) && in_array(strtolower($file_info['extension']), $allowed_extensions)) {
+                    $image_files[] = $path;
+                }
+            }
+        }
+        
+        return $image_files;
     }
 }
