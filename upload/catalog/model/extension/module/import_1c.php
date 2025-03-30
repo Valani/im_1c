@@ -236,6 +236,7 @@ class ModelExtensionModuleImport1C extends Model {
         $created = 0;
         $updated = 0;
         $errors = 0;
+        $skipped_products = [];
         
         $products_file = $this->config->get('module_import_1c_quantity_file');
         if (!$products_file) {
@@ -280,12 +281,29 @@ class ModelExtensionModuleImport1C extends Model {
                 
                 if (!$this->validateProductData($mpn, $name)) {
                     $errors++;
+                    // Log skipped product
+                    $skipped_products[] = [
+                        'mpn' => $mpn,
+                        'name' => strval($product->name),
+                        'reason' => 'Failed validation: Invalid MPN or empty name'
+                    ];
                     continue;
                 }
                 
                 $quantity = intval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->quantity)));
                 $retail_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price)));
                 $wholesale_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
+                
+                // Additional validation for prices
+                if ($retail_price <= 0) {
+                    $errors++;
+                    $skipped_products[] = [
+                        'mpn' => $mpn,
+                        'name' => $name,
+                        'reason' => 'Invalid retail price: ' . strval($product->price)
+                    ];
+                    continue;
+                }
                 
                 // Check if product already exists
                 $ex_products = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($mpn) . "'");
@@ -363,10 +381,65 @@ class ModelExtensionModuleImport1C extends Model {
                 }
             }
             
-            return ['created' => $created, 'updated' => $updated, 'errors' => $errors];
+            // Write skipped products to log file
+            if (!empty($skipped_products)) {
+                $this->logSkippedProducts($skipped_products);
+            }
+            
+            return [
+                'created' => $created, 
+                'updated' => $updated, 
+                'errors' => $errors,
+                'skipped_products_count' => count($skipped_products)
+            ];
             
         } catch (Exception $e) {
-            return ['created' => $created, 'updated' => $updated, 'errors' => $errors + 1, 'message' => $e->getMessage()];
+            // Write skipped products to log file even if there was an exception
+            if (!empty($skipped_products)) {
+                $this->logSkippedProducts($skipped_products);
+            }
+            
+            return [
+                'created' => $created, 
+                'updated' => $updated, 
+                'errors' => $errors + 1, 
+                'message' => $e->getMessage(),
+                'skipped_products_count' => count($skipped_products)
+            ];
+        }
+    }
+    
+    /**
+     * Log skipped products to a file
+     *
+     * @param array $skipped_products Array of skipped products
+     * @return void
+     */
+    private function logSkippedProducts($skipped_products) {
+        if (empty($skipped_products)) {
+            return;
+        }
+        
+        // Log file path - use system/storage/logs if DIR_LOGS constant is not available
+        $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+        
+        // Ensure log directory exists
+        if (!is_dir($log_dir)) {
+            @mkdir($log_dir, 0755, true);
+        }
+        
+        $log_file = $log_dir . 'product_import_skipped_' . date('Y-m-d') . '.log';
+        
+        // Log message
+        $log_message = date('Y-m-d H:i:s') . " Products skipped during import:\n" . 
+                      json_encode($skipped_products, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n\n";
+        
+        // Write to log using file_put_contents with error suppression
+        @file_put_contents($log_file, $log_message, FILE_APPEND);
+        
+        // Fallback to error_log if file_put_contents fails
+        if (!file_exists($log_file)) {
+            error_log("Product import details: " . count($skipped_products) . " skipped products. File write failed.");
         }
     }
 

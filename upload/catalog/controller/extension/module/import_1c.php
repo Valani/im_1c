@@ -39,6 +39,7 @@ class ControllerExtensionModuleImport1C extends Controller {
             'prices_updated' => $prices_result['updated'],
             'quantities_updated' => $quantities_result['updated'],
             'products_created' => $products_result['created'],
+            'products_updated' => $products_result['updated'],
             'images_updated' => $images_result['updated'],
             'images_skipped' => $images_result['skipped'],
             'users_created' => $users_result['created'],
@@ -55,6 +56,13 @@ class ControllerExtensionModuleImport1C extends Controller {
             $response['skipped_users_sample'] = array_slice($users_result['skipped_users'], 0, 10);
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
             $response['skipped_users_log'] = 'See detailed log in ' . $log_dir . 'user_import_' . date('Y-m-d') . '.log';
+        }
+        
+        // Include skipped products information if available
+        if (isset($products_result['skipped_products_count'])) {
+            $response['skipped_products_count'] = $products_result['skipped_products_count'];
+            $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+            $response['skipped_products_log'] = 'See detailed log in ' . $log_dir . 'product_import_skipped_' . date('Y-m-d') . '.log';
         }
         
         $this->response->addHeader('Content-Type: application/json');

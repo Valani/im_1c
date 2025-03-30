@@ -1,0 +1,809 @@
+2025-03-29 21:08:09 Products skipped during import:
+[
+    {
+        "mpn": "Baseus3А",
+        "name": "Кабель USB Type C Baseus Cafule 3A 1m",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "HV-КВ271",
+        "name": "Клавіатура Havit HV-КВ271 Black USB",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "К32616",
+        "name": "Зволожувач для пальців Корес",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е41201",
+        "name": "Рідкий клей 50мл''Economix''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А-001",
+        "name": "Суперклей  \"Pasco\" 30гр",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Я0207",
+        "name": "Запаски для клей-пістолет мал(91шт)",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Я1050",
+        "name": "Запаски для клей-пістолет вел кол",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Я1054",
+        "name": "Запаски для клей-пістолет мал кол.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Я1055",
+        "name": "Запаски для клей-пістолет мал",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31902",
+        "name": "Лоток збірний на 4 відділення",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31903",
+        "name": "Лоток збірний на 3 відділення",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31906",
+        "name": "Лоток для паперу вертик.на 1відд.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е82104",
+        "name": "Скло збільшуюче,60мм,6 кратне в футлярі\"Economix\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "9820-А",
+        "name": "Набір Магнітів 20мм 8шт. Axent by Delta",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "9825-А",
+        "name": "Набір посилених магнітів для скляних дошок  30ммх4шт",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е40810",
+        "name": "Стрічка клеюча двостор 24мм*10м\"Economix\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е40823",
+        "name": "Стрічка клеюча канц.24мм*10м\"Economix\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "500РP",
+        "name": "Ручка кулькова 500Р",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "913СS",
+        "name": "Ручка Масляна \"GOLDEX\" GRACE VIOLET 0,7mm",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "756А",
+        "name": "Ручка чорнильна 756А",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "0099с",
+        "name": "Ручка іграшка 0099 Cat",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "13361А",
+        "name": "Ручка з підсвучуванням гелева Одноріг 0,5мм",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "13363А",
+        "name": "Ручка з підсвічуванням гелева Фламінго 0,5мм",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "я3785",
+        "name": "Ручка Pilot 0,7 фіол.одноразова",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НМ-158",
+        "name": "Ручка \"Пише-стирає\" ERASABLE НМ-158",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е10601",
+        "name": "Стержень кул 107мм \"Economix\" синій",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е10801",
+        "name": "Стержень до мех олівця Еconomix НВ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "501ст",
+        "name": "Стержень гелевий Tianjao",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Ю403",
+        "name": "Стержень масляний WIN Glidex0.6",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "АВ160",
+        "name": "Візитниця 160",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "АВ240",
+        "name": "Візитниця 240",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "001-АТ",
+        "name": "Портфель пласт.А4 на 1 від.з ручкою DATA BANK",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31644",
+        "name": "Папка-пенал пласт.на блиск. А4''Economix''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31609",
+        "name": "Пенал пластиковий на блискавці В5",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31356",
+        "name": "Папка конв А-7 на  кнопці \"Economix\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О31357",
+        "name": "Папка конв А-6 на  кнопці \"OPTIMA\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О35101",
+        "name": "Папка куточок А4''OPTIMA''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е30701",
+        "name": "Папка пласт. А4 на 2 кільця з 2 карм.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е30724",
+        "name": "Папка реєстратор А5 8см''Economix''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е39720",
+        "name": "Папка реєстратор А4 5см''Economix''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О35440",
+        "name": "Папка пластикова А5 Optima на 2 кільця",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е31202",
+        "name": "Папка з притиском пласт.CLIP В''Economix''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "817-А",
+        "name": "Папка швидкозшивач пл.А4 SOHO",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "45-2В",
+        "name": "Компас",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О41646",
+        "name": "Ніж багатофункціональний на 7 функцій",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О41648",
+        "name": "Ніж багатофункціональний на 7 функцій",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "М9818",
+        "name": "Фотоальбом з аплікацією 19,5*25см закрита спіраль, самоклейка 20арк",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "328А",
+        "name": "Фоторамка 15*20 ЕВР 328А",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НХ",
+        "name": "Фоторамка 10*15 HX",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РВ-39",
+        "name": "Фоторамка РВ 39 кольорова",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О20288",
+        "name": "Блокнот \"Моє улюблене місто\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "3014А7",
+        "name": "Блокнот А-7 спіраль зверху, пластик чорний",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "150Р",
+        "name": "Валід Блокнот на Спіралі з Розділювачем А5-150Р",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "64К-С-0152",
+        "name": "Блок.на замочці з секретом \"Метелики\" 50арк.,10*15см 3в",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "64К130",
+        "name": "Блокнот 64К130",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "64К332",
+        "name": "Блокнот на замочку з секр.\"Космос\" 50арк",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "64к6440",
+        "name": "Блокнот 64К",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "809-А",
+        "name": "Блокнот на спір. А6\/32 з ручк. \"Метелики\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А507",
+        "name": "Блокнот А507\/502 А5 спіраль збоку",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А7-0710",
+        "name": "Валід Блокнот А7",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А5-80",
+        "name": "Блокнот А5\/80арк Руслан Пружина",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А6-32",
+        "name": "Блокнот  А6 32ар\"Руслан\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А6-40",
+        "name": "Блокнот А6\/40арк Руслан",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А6-80R",
+        "name": "Блокнот  А6 80ар\"Руслан\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "806094К",
+        "name": "Зошит Школярик А5 80 УФ лак пр.збоку",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "807013К",
+        "name": "Зошит  А4 80   інтегральна обкл. мат.лам.\"Student\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "807040К",
+        "name": "Зошит  А4 80   Інтегральна Крем-Блок",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "807042К",
+        "name": "Зошит  А4 80   Інтегральна Крем-Блок.Мат.Ламінація",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "806525К",
+        "name": "Зошит Школярик В5 80 матова ламінація,білий блок \"Student\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "806808К",
+        "name": "Зошит  В5 80   спіраль,білий блок, кліт.\"Genius\" 70м\/2",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "14887-А6",
+        "name": "Щоденник не Датований А6 \"Зебра\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "14931-А6",
+        "name": "Щоденник не Датований А6 \"Шкіра-Золото\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "15534-А6",
+        "name": "Щоденник не Датований А6 \"Шкіра\" фіолет.відтінок",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "С-5",
+        "name": "Конверт С-5 мк",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "С5",
+        "name": "Конверт С-5 с-кл",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е20930",
+        "name": "Стікер(100самокл.папірців) 38*50мм жов.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е20935",
+        "name": "Стікер-закладка (5кол.неонових кол.по 30шт) ''Economix''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О25531",
+        "name": "Стікер-закладка пластик45*12мм,5*20",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е82363",
+        "name": "Ватман А1 Superior  200г\/м2 60*84см",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е82127",
+        "name": "Віяр букви (Український)",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е82239",
+        "name": "Рахувальні палички \"Козлов\"круглі",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "984-12-В",
+        "name": "Н-р д\/ твор.\"Зірочки,кружеч.,серця,метелики,квіти\" 12шт.*2г у бан.(цін",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НТ-01",
+        "name": "Видання для організації дозвілля \"Набір Чарівний Чемоданчик\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "3251Н",
+        "name": "Н-р для плетін.-гумочки 3000шт.в кор.\"Яблуко\"+інстр-ти+гачки (1*48)",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "403а",
+        "name": "Набір для творчості дитячій \"Мозаїка-стрази\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ТК-8501",
+        "name": "Планшет дитячий  д\/малювання (малює кольоровим-5кол.) LCD діагональ 8.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "СR",
+        "name": "Кулька надувна",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Х65",
+        "name": "Кулька надувна ''Cюрприз''",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "YВ19",
+        "name": "Картон білий Бріск",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "В5+5-10д",
+        "name": "Папір кол. А4,5+5кол.10арк двос.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ОІ-0110",
+        "name": "Папір креповий 50*200см.110%,35,7г\/м2(10шт) Оллі",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ОІ-1110",
+        "name": "Папір креповий флуор. 50*200см.20%,50г\/м2 Оллі",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ОІ1030",
+        "name": "Папір креповий перл. 50*200см.20%,50г\/м2 Оллі",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "025-СТ",
+        "name": "Наклейка СТ-025",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "HК1",
+        "name": "Наклейка  Hк1",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "LР1WF",
+        "name": "Наклейка  LР, WF",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "АВ",
+        "name": "Наклейка книжка мала 8*3 11,6 АВ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "АЕ",
+        "name": "Наклейка АЕ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "АН1",
+        "name": "Альбом для наклейок Скат",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "АМ1",
+        "name": "Наклейка  для вчителів 2арк 10,7*21 ОК",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "2025Р",
+        "name": "Наклейка оцінки",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ВХ",
+        "name": "Наклейка ВХ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "КК",
+        "name": "Наклейка  лазерна КК",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "СС1",
+        "name": "Наклейка 006",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НY",
+        "name": "Наклейка м\"яка матова 10*24.5см НY",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А5-05",
+        "name": "Набір наліпок \"Патріотичні\" А5 2арк.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НС-А5-09",
+        "name": "Набір Весняних Наліпок А5 2арк.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НС-В6-09",
+        "name": "Набір Весняних наліпок В6 2арк.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НМ",
+        "name": "Наклейка НМ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ОК1",
+        "name": "Наклейка ОК 1",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ОК2",
+        "name": "Наклейка ОК2",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Р",
+        "name": "Наклейка об'емна P",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "САТ",
+        "name": "Наклейка САТ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "СЕ",
+        "name": "Наклейка м\"яка матова  СЕ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "СМ",
+        "name": "Наклейка  СМ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "СО",
+        "name": "Наклейка м\"яка матова СО",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "СХН",
+        "name": "Наклейка  СХН",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ТОР",
+        "name": "Наклейка ТОР",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ХВ",
+        "name": "Наклейка м\"яка матова 7*16,5см ХВ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ХЕ",
+        "name": "Наклейка ХЕ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "ХРА",
+        "name": "Наклейка м\"яка матоваХРА",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е86801",
+        "name": "Стакан-непроливайка  Economix одинарний з штроким отвором",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Е60801",
+        "name": "Набір пензликів 6 шт.Fauna\"Economix\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Р10",
+        "name": "Пензлик №10 поні к",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Р11",
+        "name": "Пензлик №11 поні к",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А-983",
+        "name": "Набір пензликів 4шт.в блістері",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "НТ-11",
+        "name": "Набір для творчості \"Пазл-Розмальовка з фарбами\" Мікс",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ-05",
+        "name": "Книжка Розмальовка-іграшка А4 мікс \"40 кол.стор\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ-06",
+        "name": "Книжка Розмальовка-іграшка А4 \"64 сторінки\" наклейки",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ-07-00",
+        "name": "Розвиваюча розмальовка В4 \"Рюкзачок\" книжка Мікс 16стор",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ-08",
+        "name": "Розмальовка-Іграшка В4 \"Палітра\" з наклейками Мікс",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ-16",
+        "name": "Розмальовка з маскою, книжка А4, 16 стор.МІКС",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ-37",
+        "name": "Розмальовка \"Грайливі Сюжети\" Мікс",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "РМ39-01",
+        "name": "Розмальовка А4 \"Супер розмальовка\" 36 сторінок Мікс",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О1212-Н",
+        "name": "Фарба олійна в тубах 12 кол. * 12 мл (6 * 12)",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "G1212-Н",
+        "name": "Фарба гуаш у тубах 12 кол.*12 мл (6*12)",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Ш-2739",
+        "name": "Лінійка проз,25см,\"Козлов\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "0015Н",
+        "name": "Лінійка гнучка 15см Flex мікс",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "0021Н",
+        "name": "Лінійка гнучка 20см Flex мікс",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "9010,",
+        "name": "Лінійка \"неломайка\" Flexy 15cm Class",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О31666",
+        "name": "Обкладинка В-6 Рег",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О31667",
+        "name": "Обкл.  А-4 звич.302*410",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "О31668",
+        "name": "Обкладинка В-6 РL (для щоден.)",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "2601-ТМ",
+        "name": "Обкладинка для Атласів 150 МКМ ТАСКОМ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "2701-ТМ",
+        "name": "Обкладинка для робочих зошитів 100 МКМ ТАСКОМ",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "818-А4",
+        "name": "Папка 818",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А01-7",
+        "name": "Пенал м'який глянцевий",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Х-03",
+        "name": "Підставка для книг \"Харків\"",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "МЗ-С5-12",
+        "name": "Зошит для Нот А5 12 арк. скоба",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "4813С",
+        "name": "Стругалка CLASS 4813",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "2432С",
+        "name": "Сумка для взуття Class Friends 46x33см. Поліестер",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "Х-004",
+        "name": "Термос 500мл \"Камуфляж\" зі чашкою, сталь",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "5302,",
+        "name": "Циркуль Buromax",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "А-918",
+        "name": "Готувальна 7 предметів",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "1В1587",
+        "name": "Щоденник учн.\"Найрозумніший\" УФ-Лак-Тисн",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "1В1614",
+        "name": "Щоденник \"Sotf Touch\" тв.обкл.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "1723В",
+        "name": "Щоденник шкільний Обкл.7БЦ 40 арк.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "я4590",
+        "name": "Сумка з Ручками \"Ukraine\" 26x32 см.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "я4591",
+        "name": "Сумка з Ручками \"Football\" 26x32 см.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "я4592",
+        "name": "Сумка з Ручками \"Puppy \" 26x32 см.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    },
+    {
+        "mpn": "я4594",
+        "name": "Сумка з Ручками \"Дівчинка\" 26x32 см.",
+        "reason": "Failed validation: Invalid MPN or empty name"
+    }
+]
+
