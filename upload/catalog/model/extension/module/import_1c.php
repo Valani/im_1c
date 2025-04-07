@@ -869,6 +869,82 @@ class ModelExtensionModuleImport1C extends Model {
      * 
      * @return array Results of the export operation
      */
+    /**
+     * Log images that exist on the server but have not been added to products
+     * 
+     * @return array Results of the scan
+     */
+    public function logUnusedImages() {
+        $found = 0;
+        $errors = 0;
+        
+        try {
+            // Get all image files from the source directory and subdirectories
+            $image_files = $this->findImageFiles(self::IMAGES_SOURCE_DIR);
+            $unused_images = [];
+            
+            foreach ($image_files as $image_file) {
+                // Get the filename without extension to use as SKU
+                $file_info = pathinfo($image_file);
+                $file_basename = $file_info['filename'];
+                $sku = $file_basename;
+                
+                // Find the product with this SKU
+                $product_query = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($sku) . "'");
+                
+                // If no product with this SKU exists, add to unused images list
+                if ($product_query->num_rows == 0) {
+                    $unused_images[] = $image_file;  // Just store the full path to the image
+                    $found++;
+                }
+            }
+            
+            // Create log of unused images
+            if (!empty($unused_images)) {
+                // Log file path - use system/storage/logs if DIR_LOGS constant is not available
+                $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+                
+                // Ensure log directory exists
+                if (!is_dir($log_dir)) {
+                    @mkdir($log_dir, 0755, true);
+                }
+                
+                $log_file = $log_dir . 'unused_images_' . date('Y-m-d') . '.log';
+                
+                // Create a detailed log message with each image on a new line
+                $log_message = date('Y-m-d H:i:s') . " - Found " . count($unused_images) . " unused images:\n\n";
+                
+                // Add each image path on a new line for better readability
+                foreach ($unused_images as $image_path) {
+                    $log_message .= $image_path . "\n";
+                }
+                
+                $log_message .= "\n"; // Add extra newline at the end
+                
+                // Write to log using file_put_contents with error suppression
+                @file_put_contents($log_file, $log_message, FILE_APPEND);
+                
+                // Fallback to error_log if file_put_contents fails
+                if (!file_exists($log_file)) {
+                    error_log("Unused images scan details: " . count($unused_images) . " images found. File write failed.");
+                }
+            }
+            
+            return [
+                'found' => $found,
+                'errors' => $errors,
+                'log_file' => isset($log_dir) ? $log_dir . 'unused_images_' . date('Y-m-d') . '.log' : ''
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'found' => $found,
+                'errors' => $errors + 1,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+    
     public function exportOrders() {
         $exported = 0;
         $errors = 0;

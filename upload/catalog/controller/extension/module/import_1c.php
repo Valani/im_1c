@@ -34,6 +34,9 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Export orders to XML
         $orders_result = $this->model_extension_module_import_1c->exportOrders();
         
+        // Log unused images
+        $unused_images_result = $this->model_extension_module_import_1c->logUnusedImages();
+        
         // Виведення результатів
         $response = [
             'prices_updated' => $prices_result['updated'],
@@ -47,7 +50,10 @@ class ControllerExtensionModuleImport1C extends Controller {
             'users_deleted' => $users_result['deleted'],
             'users_skipped' => $users_result['skipped'],
             'orders_exported' => isset($orders_result['exported']) ? $orders_result['exported'] : 0,
-            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors'] + $users_result['errors'] + (isset($orders_result['errors']) ? $orders_result['errors'] : 0)
+            'unused_images_found' => isset($unused_images_result['found']) ? $unused_images_result['found'] : 0,
+            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors'] + $users_result['errors'] + 
+                    (isset($orders_result['errors']) ? $orders_result['errors'] : 0) +
+                    (isset($unused_images_result['errors']) ? $unused_images_result['errors'] : 0)
         ];
         
         // Include skipped users details if they exist (limit to first 10 for JSON response size)
@@ -63,6 +69,12 @@ class ControllerExtensionModuleImport1C extends Controller {
             $response['skipped_products_count'] = $products_result['skipped_products_count'];
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
             $response['skipped_products_log'] = 'See detailed log in ' . $log_dir . 'product_import_skipped_' . date('Y-m-d') . '.log';
+        }
+        
+        // Include unused images log file path if available
+        if (isset($unused_images_result['found']) && $unused_images_result['found'] > 0) {
+            $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+            $response['unused_images_log'] = 'See detailed log in ' . $log_dir . 'unused_images_' . date('Y-m-d') . '.log';
         }
         
         $this->response->addHeader('Content-Type: application/json');
@@ -98,6 +110,41 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Include error message if available
         if (isset($orders_result['message'])) {
             $response['message'] = $orders_result['message'];
+        }
+        
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    
+    /**
+     * Log Unused Images via CRON
+     * Creates a log file listing all images on the server that don't have corresponding products
+     */
+    public function logUnusedImagesCron() {
+        // Optional IP security check
+        // if (!in_array($this->request->server['REMOTE_ADDR'], ['127.0.0.1', 'your_server_ip'])) {
+        //     exit('Access denied');
+        // }
+        
+        $this->load->model('extension/module/import_1c');
+        
+        // Log unused images
+        $log_result = $this->model_extension_module_import_1c->logUnusedImages();
+        
+        // Prepare the response
+        $response = [
+            'images_found' => $log_result['found'],
+            'errors' => $log_result['errors']
+        ];
+        
+        // Include log file path if available
+        if (isset($log_result['log_file'])) {
+            $response['log_file'] = $log_result['log_file'];
+        }
+        
+        // Include error message if available
+        if (isset($log_result['message'])) {
+            $response['message'] = $log_result['message'];
         }
         
         $this->response->addHeader('Content-Type: application/json');
