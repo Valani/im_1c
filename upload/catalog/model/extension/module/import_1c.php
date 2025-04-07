@@ -12,6 +12,8 @@ class ModelExtensionModuleImport1C extends Model {
     const IMAGES_TARGET_DIR = '/home/cr548725/feniks-lviv.com.ua/www/image/catalog/products/';
     const USERS_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/users_utf.xml';
     const ORDERS_EXPORT_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/orders';
+    const MANUFACTURER_SORT_ORDER = 0;
+    const MANUFACTURER_NOINDEX = 1;
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -102,13 +104,31 @@ class ModelExtensionModuleImport1C extends Model {
                 $ex_products = $this->db->query("SELECT product_id, stock_status_id FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($mpn) . "'");
                 $ex_products = $ex_products->rows;
                 
+                // Get manufacturer name from XML if it exists
+                $manufacturer_name = isset($product->brand) ? trim(strval($product->brand)) : '';
+                $manufacturer_id = 0;
+                
+                if (!empty($manufacturer_name)) {
+                    $manufacturer_id = $this->getOrCreateManufacturer($manufacturer_name);
+                }
+                
                 if (!empty($ex_products)) {
                     foreach ($ex_products as $ex_product) {
                         $product_ex_id = $ex_product['product_id'];
                         
-                        // Update regular price
+                        // Update regular price and manufacturer
                         $retail_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price)));
-                        $this->db->query("UPDATE " . DB_PREFIX . "product SET price = " . floatval($retail_price) . " WHERE product_id = " . (int)$product_ex_id);
+                        
+                        if (!empty($manufacturer_name)) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
+                                price = " . floatval($retail_price) . ",
+                                manufacturer_id = " . (int)$manufacturer_id . " 
+                                WHERE product_id = " . (int)$product_ex_id);
+                        } else {
+                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
+                                price = " . floatval($retail_price) . " 
+                                WHERE product_id = " . (int)$product_ex_id);
+                        }
                         
                         // Update wholesale price (as special price)
                         $wholesale_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
@@ -201,6 +221,14 @@ class ModelExtensionModuleImport1C extends Model {
                     continue;
                 }
                 
+                // Get manufacturer name from XML if it exists
+                $manufacturer_name = isset($product->brand) ? trim(strval($product->brand)) : '';
+                $manufacturer_id = 0;
+                
+                if (!empty($manufacturer_name)) {
+                    $manufacturer_id = $this->getOrCreateManufacturer($manufacturer_name);
+                }
+                
                 // Find products by SKU (was UPC in old script)
                 $ex_products = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($mpn) . "'");
                 $ex_products = $ex_products->rows;
@@ -213,7 +241,19 @@ class ModelExtensionModuleImport1C extends Model {
                         if (!in_array($product_ex_id, $ids_exists)) {
                             $ids_exists[] = $product_ex_id;
                         }
-                        $this->db->query("UPDATE " . DB_PREFIX . "product SET quantity = " . (int)$quantity . " WHERE product_id = " . (int)$product_ex_id);
+                        
+                        // Update quantity and manufacturer if applicable
+                        if (!empty($manufacturer_name)) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
+                                quantity = " . (int)$quantity . ",
+                                manufacturer_id = " . (int)$manufacturer_id . " 
+                                WHERE product_id = " . (int)$product_ex_id);
+                        } else {
+                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
+                                quantity = " . (int)$quantity . " 
+                                WHERE product_id = " . (int)$product_ex_id);
+                        }
+                        
                         $updated++;
                     }
                 }
@@ -290,6 +330,9 @@ class ModelExtensionModuleImport1C extends Model {
                     continue;
                 }
                 
+                // Get manufacturer name from XML if it exists
+                $manufacturer_name = isset($product->brand) ? trim(strval($product->brand)) : '';
+                
                 $quantity = intval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->quantity)));
                 $retail_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price)));
                 $wholesale_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
@@ -309,6 +352,12 @@ class ModelExtensionModuleImport1C extends Model {
                 $ex_products = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($mpn) . "'");
                 $ex_products = $ex_products->rows;
                 
+                // Process manufacturer (if brand exists in XML)
+                $manufacturer_id = 0;
+                if (!empty($manufacturer_name)) {
+                    $manufacturer_id = $this->getOrCreateManufacturer($manufacturer_name);
+                }
+                
                 if (empty($ex_products)) {
                     // Створення нового товару
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product SET 
@@ -316,6 +365,7 @@ class ModelExtensionModuleImport1C extends Model {
                         sku = '" . $this->db->escape($mpn) . "', 
                         upc = '', 
                         quantity = " . (int)$quantity . ", 
+                        manufacturer_id = " . (int)$manufacturer_id . ",
                         stock_status_id = " . self::DEFAULT_STOCK_STATUS_ID . ", 
                         price = " . floatval($retail_price) . ", 
                         status = 1, 
@@ -347,7 +397,7 @@ class ModelExtensionModuleImport1C extends Model {
                     
                     $created++;
                 } else {
-                    // Update existing product with new data (name and SEO)
+                    // Update existing product with new data (name, manufacturer, and SEO)
                     foreach ($ex_products as $ex_product) {
                         $product_ex_id = $ex_product['product_id'];
                         
@@ -357,6 +407,13 @@ class ModelExtensionModuleImport1C extends Model {
                             `meta_h1` = '" . $this->db->escape($name) . "'
                             WHERE product_id = " . (int)$product_ex_id . " 
                             AND language_id = " . self::DEFAULT_LANGUAGE_ID);
+                        
+                        // Update product manufacturer if brand exists in XML
+                        if (!empty($manufacturer_name)) {
+                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
+                                manufacturer_id = " . (int)$manufacturer_id . "
+                                WHERE product_id = " . (int)$product_ex_id);
+                        }
                         
                         // Update SEO URL
                         $slug = $this->generateSeoUrl($name);
@@ -386,11 +443,16 @@ class ModelExtensionModuleImport1C extends Model {
                 $this->logSkippedProducts($skipped_products);
             }
             
+            // Get manufacturer statistics
+            $manufacturer_stats = $this->getManufacturerStats();
+            
             return [
                 'created' => $created, 
                 'updated' => $updated, 
                 'errors' => $errors,
-                'skipped_products_count' => count($skipped_products)
+                'skipped_products_count' => count($skipped_products),
+                'manufacturers_processed' => $manufacturer_stats['manufacturers_processed'],
+                'manufacturers_created' => $manufacturer_stats['manufacturers_created']
             ];
             
         } catch (Exception $e) {
@@ -399,12 +461,17 @@ class ModelExtensionModuleImport1C extends Model {
                 $this->logSkippedProducts($skipped_products);
             }
             
+            // Get manufacturer statistics
+            $manufacturer_stats = $this->getManufacturerStats();
+            
             return [
                 'created' => $created, 
                 'updated' => $updated, 
                 'errors' => $errors + 1, 
                 'message' => $e->getMessage(),
-                'skipped_products_count' => count($skipped_products)
+                'skipped_products_count' => count($skipped_products),
+                'manufacturers_processed' => $manufacturer_stats['manufacturers_processed'],
+                'manufacturers_created' => $manufacturer_stats['manufacturers_created']
             ];
         }
     }
@@ -869,6 +936,107 @@ class ModelExtensionModuleImport1C extends Model {
      * 
      * @return array Results of the export operation
      */
+    /**
+     * Get or create a manufacturer
+     * Checks if the manufacturer exists in the database and returns its ID
+     * If it doesn't exist, creates a new manufacturer
+     *
+     * @param string $manufacturer_name The name of the manufacturer
+     * @return int The manufacturer ID
+     */
+    private function getOrCreateManufacturer($manufacturer_name) {
+        static $manufacturers_processed = 0;
+        static $manufacturers_created = 0;
+        static $cache = [];
+        
+        $manufacturer_name = trim($manufacturer_name);
+        
+        // If manufacturer name is empty, return 0 (no manufacturer)
+        if (empty($manufacturer_name)) {
+            return 0;
+        }
+        
+        // Check in local cache first for performance
+        if (isset($cache[$manufacturer_name])) {
+            return $cache[$manufacturer_name];
+        }
+        
+        $manufacturers_processed++;
+        
+        // Check if manufacturer already exists
+        $manufacturer_query = $this->db->query("SELECT manufacturer_id FROM " . DB_PREFIX . "manufacturer 
+            WHERE name = '" . $this->db->escape($manufacturer_name) . "'");
+        
+        if ($manufacturer_query->num_rows > 0) {
+            // Manufacturer exists, return the ID
+            $manufacturer_id = (int)$manufacturer_query->row['manufacturer_id'];
+            $cache[$manufacturer_name] = $manufacturer_id;
+            return $manufacturer_id;
+        } else {
+            // Manufacturer doesn't exist, create new one
+            $manufacturers_created++;
+            
+            // Log the new manufacturer creation
+            $this->debugLog("Creating new manufacturer: " . $manufacturer_name);
+            
+            // Insert into oc_manufacturer table
+            $this->db->query("INSERT INTO " . DB_PREFIX . "manufacturer SET 
+                name = '" . $this->db->escape($manufacturer_name) . "', 
+                image = '', 
+                sort_order = " . self::MANUFACTURER_SORT_ORDER . ", 
+                noindex = " . self::MANUFACTURER_NOINDEX);
+            
+            $manufacturer_id = $this->db->getLastId();
+            
+            // Insert into oc_manufacturer_description table
+            $this->db->query("INSERT INTO " . DB_PREFIX . "manufacturer_description SET 
+                manufacturer_id = " . (int)$manufacturer_id . ", 
+                language_id = " . self::DEFAULT_LANGUAGE_ID . ", 
+                meta_h1 = '" . $this->db->escape($manufacturer_name) . "',
+                description = '',
+                meta_title = '',
+                meta_description = '',
+                meta_keyword = ''");
+            
+            // Insert into oc_manufacturer_to_layout table
+            $this->db->query("INSERT INTO " . DB_PREFIX . "manufacturer_to_layout SET 
+                manufacturer_id = " . (int)$manufacturer_id . ", 
+                store_id = 0, 
+                layout_id = 0");
+            
+            // Insert into oc_manufacturer_to_store table
+            $this->db->query("INSERT INTO " . DB_PREFIX . "manufacturer_to_store SET 
+                manufacturer_id = " . (int)$manufacturer_id . ", 
+                store_id = 0");
+                
+            // Create SEO URL for manufacturer
+            $slug = $this->generateSeoUrl($manufacturer_name);
+            $this->db->query("INSERT INTO " . DB_PREFIX . "seo_url SET 
+                store_id = 0, 
+                language_id = " . self::DEFAULT_LANGUAGE_ID . ", 
+                `query` = 'manufacturer_id=" . $manufacturer_id . "', 
+                `keyword` = '" . $this->db->escape($slug) . "'");
+            
+            $cache[$manufacturer_name] = $manufacturer_id;
+            return (int)$manufacturer_id;
+        }
+    }
+    
+    /**
+     * Get statistics about manufacturers processed
+     *
+     * @return array Statistics about manufacturers
+     */
+    public function getManufacturerStats() {
+        static $manufacturers_processed = 0;
+        static $manufacturers_created = 0;
+        
+        return [
+            'manufacturers_processed' => $manufacturers_processed,
+            'manufacturers_created' => $manufacturers_created
+        ];
+    }
+
     /**
      * Log images that exist on the server but have not been added to products
      * 

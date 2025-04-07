@@ -49,6 +49,8 @@ class ControllerExtensionModuleImport1C extends Controller {
             'users_updated' => $users_result['updated'],
             'users_deleted' => $users_result['deleted'],
             'users_skipped' => $users_result['skipped'],
+            'manufacturers_processed' => isset($products_result['manufacturers_processed']) ? $products_result['manufacturers_processed'] : 0,
+            'manufacturers_created' => isset($products_result['manufacturers_created']) ? $products_result['manufacturers_created'] : 0,
             'orders_exported' => isset($orders_result['exported']) ? $orders_result['exported'] : 0,
             'unused_images_found' => isset($unused_images_result['found']) ? $unused_images_result['found'] : 0,
             'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors'] + $users_result['errors'] + 
