@@ -14,6 +14,11 @@ class ModelExtensionModuleImport1C extends Model {
     const ORDERS_EXPORT_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/orders';
     const MANUFACTURER_SORT_ORDER = 0;
     const MANUFACTURER_NOINDEX = 1;
+    const CATEGORY_SORT_ORDER = 0;
+    const CATEGORY_STATUS = 1;
+    const CATEGORY_NOINDEX = 1;
+    const CATEGORY_COLUMN = 1;
+    const MAX_CATEGORY_LEVELS = 10; // Support for up to 10 levels of categories
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -333,6 +338,9 @@ class ModelExtensionModuleImport1C extends Model {
                 // Get manufacturer name from XML if it exists
                 $manufacturer_name = isset($product->brand) ? trim(strval($product->brand)) : '';
                 
+                // Process category hierarchy from XML
+                $category_id = $this->processCategoryHierarchy($product);
+                
                 $quantity = intval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->quantity)));
                 $retail_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price)));
                 $wholesale_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
@@ -377,7 +385,7 @@ class ModelExtensionModuleImport1C extends Model {
                     // Додаткові записи
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = " . (int)$product_ex_id . ", store_id = 0");
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_layout SET product_id = " . (int)$product_ex_id . ", store_id = 0, layout_id = 0");
-                    $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_category SET product_id = " . (int)$product_ex_id . ", category_id = " . self::DEFAULT_CATEGORY_ID);
+                    $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_category SET product_id = " . (int)$product_ex_id . ", category_id = " . (int)$category_id);
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_description SET product_id = " . (int)$product_ex_id . ", language_id = " . self::DEFAULT_LANGUAGE_ID . ", `name` = '" . $this->db->escape($name) . "', `meta_h1` = '" . $this->db->escape($name) . "'");
                     
                     // SEO URL використовуючи покращену транслітерацію (лише ім'я)
@@ -415,6 +423,12 @@ class ModelExtensionModuleImport1C extends Model {
                                 WHERE product_id = " . (int)$product_ex_id);
                         }
                         
+                        // Update product category
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "product_to_category WHERE product_id = " . (int)$product_ex_id);
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_category SET 
+                            product_id = " . (int)$product_ex_id . ", 
+                            category_id = " . (int)$category_id);
+                        
                         // Update SEO URL
                         $slug = $this->generateSeoUrl($name);
                         
@@ -446,13 +460,18 @@ class ModelExtensionModuleImport1C extends Model {
             // Get manufacturer statistics
             $manufacturer_stats = $this->getManufacturerStats();
             
+            // Get category statistics
+            $category_stats = $this->getCategoryStats();
+            
             return [
                 'created' => $created, 
                 'updated' => $updated, 
                 'errors' => $errors,
                 'skipped_products_count' => count($skipped_products),
                 'manufacturers_processed' => $manufacturer_stats['manufacturers_processed'],
-                'manufacturers_created' => $manufacturer_stats['manufacturers_created']
+                'manufacturers_created' => $manufacturer_stats['manufacturers_created'],
+                'categories_processed' => $category_stats['categories_processed'],
+                'categories_created' => $category_stats['categories_created']
             ];
             
         } catch (Exception $e) {
@@ -464,6 +483,9 @@ class ModelExtensionModuleImport1C extends Model {
             // Get manufacturer statistics
             $manufacturer_stats = $this->getManufacturerStats();
             
+            // Get category statistics
+            $category_stats = $this->getCategoryStats();
+            
             return [
                 'created' => $created, 
                 'updated' => $updated, 
@@ -471,7 +493,9 @@ class ModelExtensionModuleImport1C extends Model {
                 'message' => $e->getMessage(),
                 'skipped_products_count' => count($skipped_products),
                 'manufacturers_processed' => $manufacturer_stats['manufacturers_processed'],
-                'manufacturers_created' => $manufacturer_stats['manufacturers_created']
+                'manufacturers_created' => $manufacturer_stats['manufacturers_created'],
+                'categories_processed' => $category_stats['categories_processed'],
+                'categories_created' => $category_stats['categories_created']
             ];
         }
     }
@@ -936,6 +960,198 @@ class ModelExtensionModuleImport1C extends Model {
      * 
      * @return array Results of the export operation
      */
+    /**
+     * Process category hierarchy from XML data
+     * Extracts categories from XML tags (category_1 to category_10)
+     * Creates categories if they don't exist and returns the deepest category ID
+     *
+     * @param object $product The product XML object
+     * @return int The category ID to associate with the product
+     */
+    private function processCategoryHierarchy($product) {
+        static $categories_processed = 0;
+        static $categories_created = 0;
+        static $category_cache = [];
+        
+        // Start with default category
+        $category_id = self::DEFAULT_CATEGORY_ID;
+        $parent_id = 0;
+        $last_valid_category_id = self::DEFAULT_CATEGORY_ID;
+        
+        for ($level = 1; $level <= self::MAX_CATEGORY_LEVELS; $level++) {
+            $category_tag = "category_{$level}";
+            
+            // Skip if category tag doesn't exist or is empty
+            if (!isset($product->$category_tag) || empty(trim(strval($product->$category_tag)))) {
+                continue;
+            }
+            
+            $category_name = trim(strval($product->$category_tag));
+            
+            // Skip empty categories
+            if (empty($category_name)) {
+                continue;
+            }
+            
+            // Cache key combines parent ID and category name to ensure proper hierarchy
+            $cache_key = $parent_id . '_' . $category_name;
+            
+            if (isset($category_cache[$cache_key])) {
+                // Use cached category ID
+                $category_id = $category_cache[$cache_key];
+            } else {
+                // Get or create category
+                $categories_processed++;
+                $category_id = $this->getOrCreateCategory($category_name, $parent_id, $level);
+                $category_cache[$cache_key] = $category_id;
+                
+                if ($category_id > 0) {
+                    $categories_created++;
+                }
+            }
+            
+            // Update parent for next level
+            $parent_id = $category_id;
+            $last_valid_category_id = $category_id;
+        }
+        
+        return $last_valid_category_id;
+    }
+    
+    /**
+     * Get or create a category
+     * Checks if the category exists in the database and returns its ID
+     * If it doesn't exist, creates a new category with proper hierarchy
+     *
+     * @param string $category_name The name of the category
+     * @param int $parent_id The parent category ID (0 for root)
+     * @param int $level The level in the hierarchy (1-based)
+     * @return int The category ID
+     */
+    private function getOrCreateCategory($category_name, $parent_id, $level) {
+        // Check if category exists under this parent
+        $category_query = $this->db->query("SELECT c.category_id FROM " . DB_PREFIX . "category c 
+            JOIN " . DB_PREFIX . "category_description cd ON c.category_id = cd.category_id 
+            WHERE cd.name = '" . $this->db->escape($category_name) . "' 
+            AND c.parent_id = " . (int)$parent_id . " 
+            AND cd.language_id = " . self::DEFAULT_LANGUAGE_ID);
+        
+        if ($category_query->num_rows > 0) {
+            // Category exists, return the ID
+            return (int)$category_query->row['category_id'];
+        }
+        
+        // Category doesn't exist, create it
+        $this->debugLog("Creating new category: " . $category_name . " under parent ID " . $parent_id . " at level " . $level);
+        
+        // Set top flag (1 for root categories, 0 for children)
+        $top = ($parent_id == 0) ? 1 : 0;
+        
+        // Insert into oc_category table
+        $this->db->query("INSERT INTO " . DB_PREFIX . "category SET 
+            parent_id = " . (int)$parent_id . ", 
+            `top` = " . (int)$top . ", 
+            `column` = " . self::CATEGORY_COLUMN . ", 
+            sort_order = " . self::CATEGORY_SORT_ORDER . ", 
+            status = " . self::CATEGORY_STATUS . ", 
+            noindex = " . self::CATEGORY_NOINDEX . ", 
+            date_added = NOW(), 
+            date_modified = NOW()");
+        
+        $category_id = $this->db->getLastId();
+        
+        // Insert into oc_category_description table
+        $this->db->query("INSERT INTO " . DB_PREFIX . "category_description SET 
+            category_id = " . (int)$category_id . ", 
+            language_id = " . self::DEFAULT_LANGUAGE_ID . ", 
+            name = '" . $this->db->escape($category_name) . "', 
+            meta_h1 = '" . $this->db->escape($category_name) . "',
+            description = '',
+            meta_title = '',
+            meta_description = '',
+            meta_keyword = ''");
+        
+        // Create SEO URL for category
+        $slug = $this->generateSeoUrl($category_name);
+        $this->db->query("INSERT INTO " . DB_PREFIX . "seo_url SET 
+            store_id = 0, 
+            language_id = " . self::DEFAULT_LANGUAGE_ID . ", 
+            `query` = 'category_id=" . $category_id . "', 
+            `keyword` = '" . $this->db->escape($slug) . "'");
+        
+        // Insert into oc_category_to_layout table
+        $this->db->query("INSERT INTO " . DB_PREFIX . "category_to_layout SET 
+            category_id = " . (int)$category_id . ", 
+            store_id = 0, 
+            layout_id = 0");
+        
+        // Insert into oc_category_to_store table
+        $this->db->query("INSERT INTO " . DB_PREFIX . "category_to_store SET 
+            category_id = " . (int)$category_id . ", 
+            store_id = 0");
+        
+        // Handle category path records
+        $this->updateCategoryPath($category_id, $parent_id, $level);
+        
+        return (int)$category_id;
+    }
+    
+    /**
+     * Update the category path records for a category
+     * OpenCart uses oc_category_path to optimize nested queries
+     *
+     * @param int $category_id The category ID
+     * @param int $parent_id The parent category ID
+     * @param int $level The level in the hierarchy (1-based)
+     */
+    private function updateCategoryPath($category_id, $parent_id, $level) {
+        // Clear existing path entries
+        $this->db->query("DELETE FROM " . DB_PREFIX . "category_path WHERE category_id = " . (int)$category_id);
+        
+        // If this is a root category (level 1)
+        if ($level == 1) {
+            // Just add self-reference path
+            $this->db->query("INSERT INTO " . DB_PREFIX . "category_path SET 
+                category_id = " . (int)$category_id . ", 
+                path_id = " . (int)$category_id . ", 
+                level = 0");
+        } else {
+            // For non-root categories, need to include paths from parent
+            $parent_paths_query = $this->db->query("SELECT * FROM " . DB_PREFIX . "category_path 
+                WHERE category_id = " . (int)$parent_id . " 
+                ORDER BY level ASC");
+            
+            // Add parent paths
+            foreach ($parent_paths_query->rows as $path) {
+                $this->db->query("INSERT INTO " . DB_PREFIX . "category_path SET 
+                    category_id = " . (int)$category_id . ", 
+                    path_id = " . (int)$path['path_id'] . ", 
+                    level = " . ((int)$path['level'] + 1));
+            }
+            
+            // Add self-reference path
+            $this->db->query("INSERT INTO " . DB_PREFIX . "category_path SET 
+                category_id = " . (int)$category_id . ", 
+                path_id = " . (int)$category_id . ", 
+                level = " . ($level - 1));
+        }
+    }
+    
+    /**
+     * Get statistics about categories processed
+     *
+     * @return array Statistics about categories
+     */
+    public function getCategoryStats() {
+        static $categories_processed = 0;
+        static $categories_created = 0;
+        
+        return [
+            'categories_processed' => $categories_processed,
+            'categories_created' => $categories_created
+        ];
+    }
+    
     /**
      * Get or create a manufacturer
      * Checks if the manufacturer exists in the database and returns its ID
