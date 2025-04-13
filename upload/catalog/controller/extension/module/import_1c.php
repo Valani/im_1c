@@ -37,6 +37,12 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Log unused images
         $unused_images_result = $this->model_extension_module_import_1c->logUnusedImages();
         
+        // Clean up manufacturers without products
+        $manufacturers_cleanup_result = $this->model_extension_module_import_1c->cleanupManufacturers();
+        
+        // Clean up categories without products
+        $categories_cleanup_result = $this->model_extension_module_import_1c->cleanupCategories();
+        
         // Виведення результатів
         $response = [
             'prices_updated' => $prices_result['updated'],
@@ -51,13 +57,18 @@ class ControllerExtensionModuleImport1C extends Controller {
             'users_skipped' => $users_result['skipped'],
             'manufacturers_processed' => isset($products_result['manufacturers_processed']) ? $products_result['manufacturers_processed'] : 0,
             'manufacturers_created' => isset($products_result['manufacturers_created']) ? $products_result['manufacturers_created'] : 0,
+            'manufacturers_removed' => isset($manufacturers_cleanup_result['removed']) ? $manufacturers_cleanup_result['removed'] : 0,
             'categories_processed' => isset($products_result['categories_processed']) ? $products_result['categories_processed'] : 0,
             'categories_created' => isset($products_result['categories_created']) ? $products_result['categories_created'] : 0,
+            'categories_removed' => isset($categories_cleanup_result['removed']) ? $categories_cleanup_result['removed'] : 0,
             'orders_exported' => isset($orders_result['exported']) ? $orders_result['exported'] : 0,
             'unused_images_found' => isset($unused_images_result['found']) ? $unused_images_result['found'] : 0,
-            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + $images_result['errors'] + $users_result['errors'] + 
+            'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + 
+                    $images_result['errors'] + $users_result['errors'] + 
                     (isset($orders_result['errors']) ? $orders_result['errors'] : 0) +
-                    (isset($unused_images_result['errors']) ? $unused_images_result['errors'] : 0)
+                    (isset($unused_images_result['errors']) ? $unused_images_result['errors'] : 0) +
+                    (isset($manufacturers_cleanup_result['errors']) ? $manufacturers_cleanup_result['errors'] : 0) +
+                    (isset($categories_cleanup_result['errors']) ? $categories_cleanup_result['errors'] : 0)
         ];
         
         // Include skipped users details if they exist (limit to first 10 for JSON response size)
@@ -79,6 +90,22 @@ class ControllerExtensionModuleImport1C extends Controller {
         if (isset($unused_images_result['found']) && $unused_images_result['found'] > 0) {
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
             $response['unused_images_log'] = 'See detailed log in ' . $log_dir . 'unused_images_' . date('Y-m-d') . '.log';
+        }
+        
+        // Include manufacturer cleanup details if available
+        if (isset($manufacturers_cleanup_result['removed_list']) && !empty($manufacturers_cleanup_result['removed_list'])) {
+            $response['manufacturers_removed_list'] = array_slice($manufacturers_cleanup_result['removed_list'], 0, 20); // Show max 20 items
+            if (count($manufacturers_cleanup_result['removed_list']) > 20) {
+                $response['manufacturers_removed_more'] = count($manufacturers_cleanup_result['removed_list']) - 20;
+            }
+        }
+        
+        // Include category cleanup details if available
+        if (isset($categories_cleanup_result['removed_list']) && !empty($categories_cleanup_result['removed_list'])) {
+            $response['categories_removed_list'] = array_slice($categories_cleanup_result['removed_list'], 0, 20); // Show max 20 items
+            if (count($categories_cleanup_result['removed_list']) > 20) {
+                $response['categories_removed_more'] = count($categories_cleanup_result['removed_list']) - 20;
+            }
         }
         
         $this->response->addHeader('Content-Type: application/json');
@@ -149,6 +176,74 @@ class ControllerExtensionModuleImport1C extends Controller {
         // Include error message if available
         if (isset($log_result['message'])) {
             $response['message'] = $log_result['message'];
+        }
+        
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    
+    /**
+     * Clean up manufacturers with no associated products via CRON
+     */
+    public function cleanupManufacturersCron() {
+        // Optional IP security check
+        // if (!in_array($this->request->server['REMOTE_ADDR'], ['127.0.0.1', 'your_server_ip'])) {
+        //     exit('Access denied');
+        // }
+        
+        $this->load->model('extension/module/import_1c');
+        
+        // Clean up manufacturers
+        $cleanup_result = $this->model_extension_module_import_1c->cleanupManufacturers();
+        
+        // Prepare the response
+        $response = [
+            'manufacturers_removed' => $cleanup_result['removed'],
+            'errors' => $cleanup_result['errors']
+        ];
+        
+        // Include error message if available
+        if (isset($cleanup_result['message'])) {
+            $response['message'] = $cleanup_result['message'];
+        }
+        
+        // Include removed manufacturers list if available
+        if (isset($cleanup_result['removed_list']) && !empty($cleanup_result['removed_list'])) {
+            $response['removed_list'] = $cleanup_result['removed_list'];
+        }
+        
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    }
+    
+    /**
+     * Clean up categories with no associated products via CRON
+     */
+    public function cleanupCategoriesCron() {
+        // Optional IP security check
+        // if (!in_array($this->request->server['REMOTE_ADDR'], ['127.0.0.1', 'your_server_ip'])) {
+        //     exit('Access denied');
+        // }
+        
+        $this->load->model('extension/module/import_1c');
+        
+        // Clean up categories
+        $cleanup_result = $this->model_extension_module_import_1c->cleanupCategories();
+        
+        // Prepare the response
+        $response = [
+            'categories_removed' => $cleanup_result['removed'],
+            'errors' => $cleanup_result['errors']
+        ];
+        
+        // Include error message if available
+        if (isset($cleanup_result['message'])) {
+            $response['message'] = $cleanup_result['message'];
+        }
+        
+        // Include removed categories list if available
+        if (isset($cleanup_result['removed_list']) && !empty($cleanup_result['removed_list'])) {
+            $response['removed_list'] = $cleanup_result['removed_list'];
         }
         
         $this->response->addHeader('Content-Type: application/json');

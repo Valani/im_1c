@@ -59,7 +59,7 @@ class ModelExtensionModuleImport1C extends Model {
         return $name;
     }
 
-    // Імпорт цін з 1С
+    // Імпорт цін з 1С (optimized with batch processing)
     public function importPrices() {
         $updated = 0;
         $errors = 0;
@@ -73,6 +73,9 @@ class ModelExtensionModuleImport1C extends Model {
         if ($per_page <= 0) {
             $per_page = self::DEFAULT_PER_PAGE;
         }
+        
+        // Define batch size for database operations
+        $batch_size = 500;
         
         try {
             // Перевірка наявності файлу
@@ -93,6 +96,13 @@ class ModelExtensionModuleImport1C extends Model {
             $page = 1;
             $start = ($page - 1) * $per_page;
             $end = min($start + $per_page, $total);
+            
+            // Batch update arrays
+            $product_updates = [];
+            $product_description_updates = [];
+            $seo_url_updates = [];
+            $special_price_deletes = [];
+            $special_price_inserts = [];
             
             for ($i = $start; $i < $end; $i++) {
                 if (!isset($feed->product[$i])) {
@@ -124,77 +134,97 @@ class ModelExtensionModuleImport1C extends Model {
                     foreach ($ex_products as $ex_product) {
                         $product_ex_id = $ex_product['product_id'];
                         
-                        // Update default price in product table
+                        // Get and format price values
                         $default_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
-                        
-                        if (!empty($manufacturer_name)) {
-                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
-                                price = " . floatval($default_price) . ",
-                                manufacturer_id = " . (int)$manufacturer_id . " 
-                                WHERE product_id = " . (int)$product_ex_id);
-                        } else {
-                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
-                                price = " . floatval($default_price) . " 
-                                WHERE product_id = " . (int)$product_ex_id);
-                        }
-                        
-                        // Delete existing special prices for this product
-                        $this->db->query("DELETE FROM " . DB_PREFIX . "product_special WHERE product_id = " . (int)$product_ex_id);
-                        
-                        // Handle price_2 (Commercial 2 group)
                         $price_2 = isset($product->price_2) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_2))) : 0;
-                        if ($price_2 > 0 && $price_2 != $default_price) {
-                            $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
-                                product_id = " . (int)$product_ex_id . ", 
-                                customer_group_id = " . self::COMMERCIAL_2_GROUP_ID . ", 
-                                price = " . floatval($price_2) . ",
-                                priority = 1,
-                                date_start = '0000-00-00',
-                                date_end = '0000-00-00'");
-                        }
-                        
-                        // Handle price_5 (Commercial 5 group)
                         $price_5 = isset($product->price_5) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_5))) : 0;
-                        if ($price_5 > 0 && $price_5 != $default_price) {
-                            $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
-                                product_id = " . (int)$product_ex_id . ", 
-                                customer_group_id = " . self::COMMERCIAL_5_GROUP_ID . ", 
-                                price = " . floatval($price_5) . ",
-                                priority = 1,
-                                date_start = '0000-00-00',
-                                date_end = '0000-00-00'");
-                        }
-                        
-                        // Handle price_7 (Commercial 7 group)
                         $price_7 = isset($product->price_7) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_7))) : 0;
-                        if ($price_7 > 0 && $price_7 != $default_price) {
-                            $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
-                                product_id = " . (int)$product_ex_id . ", 
-                                customer_group_id = " . self::COMMERCIAL_7_GROUP_ID . ", 
-                                price = " . floatval($price_7) . ",
-                                priority = 1,
-                                date_start = '0000-00-00',
-                                date_end = '0000-00-00'");
+                        
+                        // Prepare product table update
+                        if (!empty($manufacturer_name)) {
+                            $product_updates[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'price' => floatval($default_price),
+                                'manufacturer_id' => (int)$manufacturer_id
+                            ];
+                        } else {
+                            $product_updates[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'price' => floatval($default_price)
+                            ];
                         }
                         
-                        // Update product name if needed
-                        $product_name = $this->sanitizeProductName(strval($product->name));
-                        $this->db->query("UPDATE " . DB_PREFIX . "product_description SET 
-                            `name` = '" . $this->db->escape($product_name) . "',
-                            `meta_h1` = '" . $this->db->escape($product_name) . "' 
-                            WHERE product_id = " . (int)$product_ex_id . " 
-                            AND language_id = " . self::DEFAULT_LANGUAGE_ID);
+                        // Add product_id to special price delete list
+                        $special_price_deletes[] = (int)$product_ex_id;
                         
-                        // Update SEO URL
+                        // Prepare special price inserts
+                        if ($price_2 > 0 && $price_2 != $default_price) {
+                            $special_price_inserts[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'customer_group_id' => self::COMMERCIAL_2_GROUP_ID,
+                                'price' => floatval($price_2),
+                                'priority' => 1,
+                                'date_start' => '0000-00-00',
+                                'date_end' => '0000-00-00'
+                            ];
+                        }
+                        
+                        if ($price_5 > 0 && $price_5 != $default_price) {
+                            $special_price_inserts[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'customer_group_id' => self::COMMERCIAL_5_GROUP_ID,
+                                'price' => floatval($price_5),
+                                'priority' => 1,
+                                'date_start' => '0000-00-00',
+                                'date_end' => '0000-00-00'
+                            ];
+                        }
+                        
+                        if ($price_7 > 0 && $price_7 != $default_price) {
+                            $special_price_inserts[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'customer_group_id' => self::COMMERCIAL_7_GROUP_ID,
+                                'price' => floatval($price_7),
+                                'priority' => 1,
+                                'date_start' => '0000-00-00',
+                                'date_end' => '0000-00-00'
+                            ];
+                        }
+                        
+                        // Prepare product name update
+                        $product_name = $this->sanitizeProductName(strval($product->name));
+                        $product_description_updates[] = [
+                            'product_id' => (int)$product_ex_id,
+                            'name' => $this->db->escape($product_name)
+                        ];
+                        
+                        // Prepare SEO URL update
                         $slug = $this->generateSeoUrl($product_name);
-                        $this->db->query("UPDATE " . DB_PREFIX . "seo_url SET 
-                            `keyword` = '" . $this->db->escape($slug) . "' 
-                            WHERE `query` = 'product_id=" . (int)$product_ex_id . "' 
-                            AND language_id = " . self::DEFAULT_LANGUAGE_ID);
+                        $seo_url_updates[] = [
+                            'product_id' => (int)$product_ex_id,
+                            'keyword' => $this->db->escape($slug)
+                        ];
                         
                         $updated++;
+                        
+                        // Process in batches to avoid memory issues
+                        if (count($product_updates) >= $batch_size) {
+                            $this->executeBatchUpdates($product_updates, $product_description_updates, $seo_url_updates, $special_price_deletes, $special_price_inserts);
+                            
+                            // Reset arrays
+                            $product_updates = [];
+                            $product_description_updates = [];
+                            $seo_url_updates = [];
+                            $special_price_deletes = [];
+                            $special_price_inserts = [];
+                        }
                     }
                 }
+            }
+            
+            // Process any remaining items
+            if (!empty($product_updates) || !empty($special_price_inserts)) {
+                $this->executeBatchUpdates($product_updates, $product_description_updates, $seo_url_updates, $special_price_deletes, $special_price_inserts);
             }
             
             return ['updated' => $updated, 'errors' => $errors];
@@ -203,8 +233,121 @@ class ModelExtensionModuleImport1C extends Model {
             return ['updated' => $updated, 'errors' => $errors + 1, 'message' => $e->getMessage()];
         }
     }
+    
+    /**
+     * Execute batch updates for product prices and related data
+     * 
+     * @param array $product_updates Product table updates
+     * @param array $product_description_updates Product description updates
+     * @param array $seo_url_updates SEO URL updates
+     * @param array $special_price_deletes Product IDs to delete special prices for
+     * @param array $special_price_inserts Special price records to insert
+     * @return void
+     */
+    private function executeBatchUpdates($product_updates, $product_description_updates, $seo_url_updates, $special_price_deletes, $special_price_inserts) {
+        // Process product updates in CASE format for batch update
+        if (!empty($product_updates)) {
+            $price_cases = [];
+            $manufacturer_cases = [];
+            $product_ids = [];
+            
+            foreach ($product_updates as $update) {
+                $product_ids[] = (int)$update['product_id'];
+                $price_cases[] = "WHEN " . (int)$update['product_id'] . " THEN " . floatval($update['price']);
+                
+                if (isset($update['manufacturer_id'])) {
+                    $manufacturer_cases[] = "WHEN " . (int)$update['product_id'] . " THEN " . (int)$update['manufacturer_id'];
+                }
+            }
+            
+            // Update price for all products in one query
+            if (!empty($price_cases) && !empty($product_ids)) {
+                $sql = "UPDATE " . DB_PREFIX . "product SET 
+                        price = CASE product_id " . implode(' ', $price_cases) . " END";
+                
+                // Add manufacturer_id update if needed
+                if (!empty($manufacturer_cases)) {
+                    $sql .= ", manufacturer_id = CASE product_id " . implode(' ', $manufacturer_cases) . " END";
+                }
+                
+                $sql .= " WHERE product_id IN (" . implode(',', $product_ids) . ")";
+                $this->db->query($sql);
+            }
+        }
+        
+        // Process product description updates
+        if (!empty($product_description_updates)) {
+            $name_cases = [];
+            $product_ids = [];
+            
+            foreach ($product_description_updates as $update) {
+                $product_ids[] = (int)$update['product_id'];
+                $name_cases[] = "WHEN " . (int)$update['product_id'] . " THEN '" . $update['name'] . "'";
+            }
+            
+            if (!empty($name_cases) && !empty($product_ids)) {
+                $sql = "UPDATE " . DB_PREFIX . "product_description SET 
+                        `name` = CASE product_id " . implode(' ', $name_cases) . " END,
+                        `meta_h1` = CASE product_id " . implode(' ', $name_cases) . " END
+                        WHERE product_id IN (" . implode(',', $product_ids) . ")
+                        AND language_id = " . self::DEFAULT_LANGUAGE_ID;
+                $this->db->query($sql);
+            }
+        }
+        
+        // Process SEO URL updates
+        if (!empty($seo_url_updates)) {
+            $keyword_cases = [];
+            $product_ids = [];
+            
+            foreach ($seo_url_updates as $update) {
+                $product_ids[] = (int)$update['product_id'];
+                $keyword_cases[] = "WHEN 'product_id=" . (int)$update['product_id'] . "' THEN '" . $update['keyword'] . "'";
+            }
+            
+            if (!empty($keyword_cases) && !empty($product_ids)) {
+                $product_queries = [];
+                foreach ($product_ids as $id) {
+                    $product_queries[] = "'product_id=" . $id . "'";
+                }
+                
+                $sql = "UPDATE " . DB_PREFIX . "seo_url SET 
+                        `keyword` = CASE `query` " . implode(' ', $keyword_cases) . " END
+                        WHERE `query` IN (" . implode(',', $product_queries) . ")
+                        AND language_id = " . self::DEFAULT_LANGUAGE_ID;
+                $this->db->query($sql);
+            }
+        }
+        
+        // Delete special prices for selected products
+        if (!empty($special_price_deletes)) {
+            $this->db->query("DELETE FROM " . DB_PREFIX . "product_special 
+                WHERE product_id IN (" . implode(',', $special_price_deletes) . ")");
+        }
+        
+        // Insert special prices in batch
+        if (!empty($special_price_inserts)) {
+            $values = [];
+            
+            foreach ($special_price_inserts as $insert) {
+                $values[] = "(" . (int)$insert['product_id'] . ", " . 
+                           (int)$insert['customer_group_id'] . ", " . 
+                           floatval($insert['price']) . ", " . 
+                           (int)$insert['priority'] . ", " . 
+                           "'" . $insert['date_start'] . "', " . 
+                           "'" . $insert['date_end'] . "')";
+            }
+            
+            if (!empty($values)) {
+                $sql = "INSERT INTO " . DB_PREFIX . "product_special 
+                       (product_id, customer_group_id, price, priority, date_start, date_end) 
+                       VALUES " . implode(',', $values);
+                $this->db->query($sql);
+            }
+        }
+    }
 
-    // Імпорт кількості з 1С
+    // Імпорт кількості з 1С (optimized with batch processing)
     public function importQuantities() {
         $updated = 0;
         $errors = 0;
@@ -219,6 +362,9 @@ class ModelExtensionModuleImport1C extends Model {
         if ($per_page <= 0) {
             $per_page = self::DEFAULT_PER_PAGE;
         }
+        
+        // Define batch size for database operations
+        $batch_size = 500;
         
         try {
             // Перевірка наявності файлу
@@ -239,6 +385,9 @@ class ModelExtensionModuleImport1C extends Model {
             $page = 1;
             $start = ($page - 1) * $per_page;
             $end = min($start + $per_page, $total);
+            
+            // Batch update arrays
+            $quantity_updates = [];
             
             for ($i = $start; $i < $end; $i++) {
                 if (!isset($feed->product[$i])) {
@@ -262,7 +411,7 @@ class ModelExtensionModuleImport1C extends Model {
                     $manufacturer_id = $this->getOrCreateManufacturer($manufacturer_name);
                 }
                 
-                // Find products by SKU (was UPC in old script)
+                // Find products by SKU
                 $ex_products = $this->db->query("SELECT product_id FROM " . DB_PREFIX . "product WHERE sku = '" . $this->db->escape($mpn) . "'");
                 $ex_products = $ex_products->rows;
                 
@@ -275,21 +424,34 @@ class ModelExtensionModuleImport1C extends Model {
                             $ids_exists[] = $product_ex_id;
                         }
                         
-                        // Update quantity and manufacturer if applicable
+                        // Prepare product update data
                         if (!empty($manufacturer_name)) {
-                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
-                                quantity = " . (int)$quantity . ",
-                                manufacturer_id = " . (int)$manufacturer_id . " 
-                                WHERE product_id = " . (int)$product_ex_id);
+                            $quantity_updates[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'quantity' => (int)$quantity,
+                                'manufacturer_id' => (int)$manufacturer_id
+                            ];
                         } else {
-                            $this->db->query("UPDATE " . DB_PREFIX . "product SET 
-                                quantity = " . (int)$quantity . " 
-                                WHERE product_id = " . (int)$product_ex_id);
+                            $quantity_updates[] = [
+                                'product_id' => (int)$product_ex_id,
+                                'quantity' => (int)$quantity
+                            ];
                         }
                         
                         $updated++;
+                        
+                        // Process in batches to avoid memory issues
+                        if (count($quantity_updates) >= $batch_size) {
+                            $this->executeBatchQuantityUpdates($quantity_updates);
+                            $quantity_updates = []; // Reset array
+                        }
                     }
                 }
+            }
+            
+            // Process any remaining items
+            if (!empty($quantity_updates)) {
+                $this->executeBatchQuantityUpdates($quantity_updates);
             }
             
             // Встановлення кількості 0 для товарів, яких немає в файлі
@@ -301,6 +463,48 @@ class ModelExtensionModuleImport1C extends Model {
             
         } catch (Exception $e) {
             return ['updated' => $updated, 'errors' => $errors + 1, 'message' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Execute batch updates for product quantities
+     * 
+     * @param array $quantity_updates Product quantity updates
+     * @return void
+     */
+    private function executeBatchQuantityUpdates($quantity_updates) {
+        if (empty($quantity_updates)) {
+            return;
+        }
+        
+        // Process quantity updates in CASE format for batch update
+        $quantity_cases = [];
+        $manufacturer_cases = [];
+        $product_ids = [];
+        $has_manufacturer_update = false;
+        
+        foreach ($quantity_updates as $update) {
+            $product_ids[] = (int)$update['product_id'];
+            $quantity_cases[] = "WHEN " . (int)$update['product_id'] . " THEN " . (int)$update['quantity'];
+            
+            if (isset($update['manufacturer_id'])) {
+                $has_manufacturer_update = true;
+                $manufacturer_cases[] = "WHEN " . (int)$update['product_id'] . " THEN " . (int)$update['manufacturer_id'];
+            }
+        }
+        
+        // Update quantity for all products in one query
+        if (!empty($quantity_cases) && !empty($product_ids)) {
+            $sql = "UPDATE " . DB_PREFIX . "product SET 
+                    quantity = CASE product_id " . implode(' ', $quantity_cases) . " END";
+            
+            // Add manufacturer_id update if needed
+            if ($has_manufacturer_update && !empty($manufacturer_cases)) {
+                $sql .= ", manufacturer_id = CASE product_id " . implode(' ', $manufacturer_cases) . " END";
+            }
+            
+            $sql .= " WHERE product_id IN (" . implode(',', $product_ids) . ")";
+            $this->db->query($sql);
         }
     }
 
@@ -1214,11 +1418,133 @@ class ModelExtensionModuleImport1C extends Model {
     public function getCategoryStats() {
         static $categories_processed = 0;
         static $categories_created = 0;
+        static $categories_removed = 0;
         
         return [
             'categories_processed' => $categories_processed,
-            'categories_created' => $categories_created
+            'categories_created' => $categories_created,
+            'categories_removed' => $categories_removed
         ];
+    }
+    
+    /**
+     * Clean up categories that don't have any associated products
+     * Handles the hierarchical structure of categories by starting with leaf categories
+     * 
+     * @return array Statistics about the cleanup operation
+     */
+    public function cleanupCategories() {
+        static $categories_removed = 0;
+        $errors = 0;
+        $removed_categories = [];
+        
+        try {
+            $this->debugLog("Starting category cleanup");
+            
+            // Get leaf categories first (categories that don't have children)
+            // This ensures we process bottom-up to maintain referential integrity
+            $leaf_categories_query = $this->db->query("
+                SELECT c1.category_id, cd.name
+                FROM " . DB_PREFIX . "category c1
+                LEFT JOIN " . DB_PREFIX . "category c2 ON c1.category_id = c2.parent_id
+                LEFT JOIN " . DB_PREFIX . "category_description cd ON c1.category_id = cd.category_id
+                WHERE c2.category_id IS NULL
+                AND cd.language_id = " . self::DEFAULT_LANGUAGE_ID . "
+                ORDER BY c1.category_id DESC");
+            
+            if ($leaf_categories_query->num_rows == 0) {
+                return [
+                    'removed' => 0,
+                    'errors' => 0,
+                    'message' => 'No leaf categories found in database'
+                ];
+            }
+            
+            // Process each leaf category
+            foreach ($leaf_categories_query->rows as $category) {
+                // Check if the category has any associated products
+                $products_query = $this->db->query("SELECT COUNT(*) as total 
+                    FROM " . DB_PREFIX . "product_to_category 
+                    WHERE category_id = " . (int)$category['category_id']);
+                
+                $product_count = (int)$products_query->row['total'];
+                
+                // If no associated products, remove the category
+                if ($product_count == 0) {
+                    $this->debugLog("Removing category ID: " . $category['category_id'] . ", Name: " . $category['name'] . " (no associated products)");
+                    
+                    try {
+                        // Start a transaction to ensure data integrity
+                        $this->db->query("START TRANSACTION");
+                        
+                        // Remove from category table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "category 
+                            WHERE category_id = " . (int)$category['category_id']);
+                        
+                        // Remove from category_description table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "category_description 
+                            WHERE category_id = " . (int)$category['category_id']);
+                        
+                        // Remove from category_to_store table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "category_to_store 
+                            WHERE category_id = " . (int)$category['category_id']);
+                        
+                        // Remove from category_to_layout table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "category_to_layout 
+                            WHERE category_id = " . (int)$category['category_id']);
+                        
+                        // Remove from category_path table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "category_path 
+                            WHERE category_id = " . (int)$category['category_id'] . " 
+                            OR path_id = " . (int)$category['category_id']);
+                        
+                        // Remove from seo_url table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "seo_url 
+                            WHERE query = 'category_id=" . (int)$category['category_id'] . "'");
+                        
+                        // Commit the transaction
+                        $this->db->query("COMMIT");
+                        
+                        $categories_removed++;
+                        $removed_categories[] = [
+                            'id' => $category['category_id'],
+                            'name' => $category['name']
+                        ];
+                    } catch (Exception $e) {
+                        // Rollback on error
+                        $this->db->query("ROLLBACK");
+                        $errors++;
+                        $this->debugLog("Error removing category: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            // After removing leaf categories, some parent categories might now be leaves
+            // and might not have products directly assigned to them
+            // Recursively call this function until no more categories can be removed
+            if ($categories_removed > 0) {
+                $recursive_result = $this->cleanupCategories();
+                $categories_removed += $recursive_result['removed'];
+                $errors += $recursive_result['errors'];
+                
+                if (isset($recursive_result['removed_list'])) {
+                    $removed_categories = array_merge($removed_categories, $recursive_result['removed_list']);
+                }
+            }
+            
+            return [
+                'removed' => $categories_removed,
+                'errors' => $errors,
+                'removed_list' => $removed_categories
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'removed' => $categories_removed,
+                'errors' => $errors + 1,
+                'message' => $e->getMessage()
+            ];
+        }
     }
     
     /**
@@ -1315,11 +1641,106 @@ class ModelExtensionModuleImport1C extends Model {
     public function getManufacturerStats() {
         static $manufacturers_processed = 0;
         static $manufacturers_created = 0;
+        static $manufacturers_removed = 0;
         
         return [
             'manufacturers_processed' => $manufacturers_processed,
-            'manufacturers_created' => $manufacturers_created
+            'manufacturers_created' => $manufacturers_created,
+            'manufacturers_removed' => $manufacturers_removed
         ];
+    }
+    
+    /**
+     * Clean up manufacturers that don't have any associated products
+     * 
+     * @return array Statistics about the cleanup operation
+     */
+    public function cleanupManufacturers() {
+        static $manufacturers_removed = 0;
+        $errors = 0;
+        $removed_manufacturers = [];
+        
+        try {
+            $this->debugLog("Starting manufacturer cleanup");
+            
+            // Get all manufacturers
+            $manufacturers_query = $this->db->query("SELECT m.manufacturer_id, m.name 
+                FROM " . DB_PREFIX . "manufacturer m");
+            
+            if ($manufacturers_query->num_rows == 0) {
+                return [
+                    'removed' => 0,
+                    'errors' => 0,
+                    'message' => 'No manufacturers found in database'
+                ];
+            }
+            
+            foreach ($manufacturers_query->rows as $manufacturer) {
+                // Check if the manufacturer has any associated products
+                $products_query = $this->db->query("SELECT COUNT(*) as total 
+                    FROM " . DB_PREFIX . "product 
+                    WHERE manufacturer_id = " . (int)$manufacturer['manufacturer_id']);
+                
+                $product_count = (int)$products_query->row['total'];
+                
+                // If no associated products, remove the manufacturer
+                if ($product_count == 0) {
+                    $this->debugLog("Removing manufacturer ID: " . $manufacturer['manufacturer_id'] . ", Name: " . $manufacturer['name'] . " (no associated products)");
+                    
+                    try {
+                        // Start a transaction to ensure data integrity
+                        $this->db->query("START TRANSACTION");
+                        
+                        // Remove from manufacturer table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "manufacturer 
+                            WHERE manufacturer_id = " . (int)$manufacturer['manufacturer_id']);
+                        
+                        // Remove from manufacturer_description table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "manufacturer_description 
+                            WHERE manufacturer_id = " . (int)$manufacturer['manufacturer_id']);
+                        
+                        // Remove from manufacturer_to_store table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "manufacturer_to_store 
+                            WHERE manufacturer_id = " . (int)$manufacturer['manufacturer_id']);
+                        
+                        // Remove from manufacturer_to_layout table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "manufacturer_to_layout 
+                            WHERE manufacturer_id = " . (int)$manufacturer['manufacturer_id']);
+                        
+                        // Remove from seo_url table
+                        $this->db->query("DELETE FROM " . DB_PREFIX . "seo_url 
+                            WHERE query = 'manufacturer_id=" . (int)$manufacturer['manufacturer_id'] . "'");
+                        
+                        // Commit the transaction
+                        $this->db->query("COMMIT");
+                        
+                        $manufacturers_removed++;
+                        $removed_manufacturers[] = [
+                            'id' => $manufacturer['manufacturer_id'],
+                            'name' => $manufacturer['name']
+                        ];
+                    } catch (Exception $e) {
+                        // Rollback on error
+                        $this->db->query("ROLLBACK");
+                        $errors++;
+                        $this->debugLog("Error removing manufacturer: " . $e->getMessage());
+                    }
+                }
+            }
+            
+            return [
+                'removed' => $manufacturers_removed,
+                'errors' => $errors,
+                'removed_list' => $removed_manufacturers
+            ];
+            
+        } catch (Exception $e) {
+            return [
+                'removed' => $manufacturers_removed,
+                'errors' => $errors + 1,
+                'message' => $e->getMessage()
+            ];
+        }
     }
 
     /**
