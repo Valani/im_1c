@@ -6,8 +6,11 @@ class ModelExtensionModuleImport1C extends Model {
     const DEFAULT_CATEGORY_ID = 511;
     const DEFAULT_STOCK_STATUS_ID = 7;
     const DEFAULT_LANGUAGE_ID = 3;
-    const WHOLESALE_CUSTOMER_GROUP_ID = 2;
-    const RETAIL_CUSTOMER_GROUP_ID = 1;
+    // Customer group IDs
+    const DEFAULT_CUSTOMER_GROUP_ID = 1;   // Default (opt_price)
+    const COMMERCIAL_2_GROUP_ID = 2;       // Commercial 2 (price_2)
+    const COMMERCIAL_7_GROUP_ID = 3;       // Commercial 7 (price_7)
+    const COMMERCIAL_5_GROUP_ID = 4;       // Commercial 5 (price_5)
     const IMAGES_SOURCE_DIR = '/home/cr548725/feniks-lviv.com.ua/transfer/';
     const IMAGES_TARGET_DIR = '/home/cr548725/feniks-lviv.com.ua/www/image/catalog/products/';
     const USERS_FILE_PATH = '/home/cr548725/feniks-lviv.com.ua/transfer/users_utf.xml';
@@ -121,29 +124,54 @@ class ModelExtensionModuleImport1C extends Model {
                     foreach ($ex_products as $ex_product) {
                         $product_ex_id = $ex_product['product_id'];
                         
-                        // Update regular price and manufacturer
-                        $retail_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price)));
+                        // Update default price in product table
+                        $default_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
                         
                         if (!empty($manufacturer_name)) {
                             $this->db->query("UPDATE " . DB_PREFIX . "product SET 
-                                price = " . floatval($retail_price) . ",
+                                price = " . floatval($default_price) . ",
                                 manufacturer_id = " . (int)$manufacturer_id . " 
                                 WHERE product_id = " . (int)$product_ex_id);
                         } else {
                             $this->db->query("UPDATE " . DB_PREFIX . "product SET 
-                                price = " . floatval($retail_price) . " 
+                                price = " . floatval($default_price) . " 
                                 WHERE product_id = " . (int)$product_ex_id);
                         }
                         
-                        // Update wholesale price (as special price)
-                        $wholesale_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
+                        // Delete existing special prices for this product
                         $this->db->query("DELETE FROM " . DB_PREFIX . "product_special WHERE product_id = " . (int)$product_ex_id);
                         
-                        if ($wholesale_price > 0 && $wholesale_price != $retail_price) {
+                        // Handle price_2 (Commercial 2 group)
+                        $price_2 = isset($product->price_2) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_2))) : 0;
+                        if ($price_2 > 0 && $price_2 != $default_price) {
                             $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
                                 product_id = " . (int)$product_ex_id . ", 
-                                customer_group_id = " . self::WHOLESALE_CUSTOMER_GROUP_ID . ", 
-                                price = " . floatval($wholesale_price) . ",
+                                customer_group_id = " . self::COMMERCIAL_2_GROUP_ID . ", 
+                                price = " . floatval($price_2) . ",
+                                priority = 1,
+                                date_start = '0000-00-00',
+                                date_end = '0000-00-00'");
+                        }
+                        
+                        // Handle price_5 (Commercial 5 group)
+                        $price_5 = isset($product->price_5) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_5))) : 0;
+                        if ($price_5 > 0 && $price_5 != $default_price) {
+                            $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
+                                product_id = " . (int)$product_ex_id . ", 
+                                customer_group_id = " . self::COMMERCIAL_5_GROUP_ID . ", 
+                                price = " . floatval($price_5) . ",
+                                priority = 1,
+                                date_start = '0000-00-00',
+                                date_end = '0000-00-00'");
+                        }
+                        
+                        // Handle price_7 (Commercial 7 group)
+                        $price_7 = isset($product->price_7) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_7))) : 0;
+                        if ($price_7 > 0 && $price_7 != $default_price) {
+                            $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
+                                product_id = " . (int)$product_ex_id . ", 
+                                customer_group_id = " . self::COMMERCIAL_7_GROUP_ID . ", 
+                                price = " . floatval($price_7) . ",
                                 priority = 1,
                                 date_start = '0000-00-00',
                                 date_end = '0000-00-00'");
@@ -342,16 +370,19 @@ class ModelExtensionModuleImport1C extends Model {
                 $category_id = $this->processCategoryHierarchy($product);
                 
                 $quantity = intval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->quantity)));
-                $retail_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price)));
-                $wholesale_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
+                // Get all price values
+                $default_price = floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->opt_price)));
+                $price_2 = isset($product->price_2) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_2))) : 0;
+                $price_5 = isset($product->price_5) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_5))) : 0;
+                $price_7 = isset($product->price_7) ? floatval(str_replace([' ', ' ', ','], ['', '', '.'], strval($product->price_7))) : 0;
                 
                 // Additional validation for prices
-                if ($retail_price <= 0) {
+                if ($default_price <= 0) {
                     $errors++;
                     $skipped_products[] = [
                         'mpn' => $mpn,
                         'name' => $name,
-                        'reason' => 'Invalid retail price: ' . strval($product->price)
+                        'reason' => 'Invalid default price: ' . strval($product->opt_price)
                     ];
                     continue;
                 }
@@ -367,7 +398,7 @@ class ModelExtensionModuleImport1C extends Model {
                 }
                 
                 if (empty($ex_products)) {
-                    // Створення нового товару
+                    // Create new product (using default price in the main product table)
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product SET 
                         model = '" . $this->db->escape($mpn) . "', 
                         sku = '" . $this->db->escape($mpn) . "', 
@@ -375,29 +406,52 @@ class ModelExtensionModuleImport1C extends Model {
                         quantity = " . (int)$quantity . ", 
                         manufacturer_id = " . (int)$manufacturer_id . ",
                         stock_status_id = " . self::DEFAULT_STOCK_STATUS_ID . ", 
-                        price = " . floatval($retail_price) . ", 
+                        price = " . floatval($default_price) . ", 
                         status = 1, 
                         date_added = '" . date('Y-m-d H:i:s') . "', 
                         date_modified = '" . date('Y-m-d H:i:s') . "'");
                     
                     $product_ex_id = $this->db->getLastId();
                     
-                    // Додаткові записи
+                    // Additional records
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_store SET product_id = " . (int)$product_ex_id . ", store_id = 0");
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_layout SET product_id = " . (int)$product_ex_id . ", store_id = 0, layout_id = 0");
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_to_category SET product_id = " . (int)$product_ex_id . ", category_id = " . (int)$category_id);
                     $this->db->query("INSERT INTO " . DB_PREFIX . "product_description SET product_id = " . (int)$product_ex_id . ", language_id = " . self::DEFAULT_LANGUAGE_ID . ", `name` = '" . $this->db->escape($name) . "', `meta_h1` = '" . $this->db->escape($name) . "'");
                     
-                    // SEO URL використовуючи покращену транслітерацію (лише ім'я)
+                    // SEO URL 
                     $slug = $this->generateSeoUrl($name);
                     $this->db->query("INSERT INTO " . DB_PREFIX . "seo_url SET store_id = 0, language_id = " . self::DEFAULT_LANGUAGE_ID . ", `query` = 'product_id=" . $product_ex_id . "', `keyword` = '" . $this->db->escape($slug) . "'");
                     
-                    // Add wholesale price if different
-                    if ($wholesale_price > 0 && $wholesale_price != $retail_price) {
+                    // Add special prices for different customer groups
+                    // Handle price_2 (Commercial 2 group)
+                    if ($price_2 > 0 && $price_2 != $default_price) {
                         $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
                             product_id = " . (int)$product_ex_id . ", 
-                            customer_group_id = " . self::WHOLESALE_CUSTOMER_GROUP_ID . ", 
-                            price = " . floatval($wholesale_price) . ",
+                            customer_group_id = " . self::COMMERCIAL_2_GROUP_ID . ", 
+                            price = " . floatval($price_2) . ",
+                            priority = 1,
+                            date_start = '0000-00-00',
+                            date_end = '0000-00-00'");
+                    }
+                    
+                    // Handle price_5 (Commercial 5 group)
+                    if ($price_5 > 0 && $price_5 != $default_price) {
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
+                            product_id = " . (int)$product_ex_id . ", 
+                            customer_group_id = " . self::COMMERCIAL_5_GROUP_ID . ", 
+                            price = " . floatval($price_5) . ",
+                            priority = 1,
+                            date_start = '0000-00-00',
+                            date_end = '0000-00-00'");
+                    }
+                    
+                    // Handle price_7 (Commercial 7 group)
+                    if ($price_7 > 0 && $price_7 != $default_price) {
+                        $this->db->query("INSERT INTO " . DB_PREFIX . "product_special SET 
+                            product_id = " . (int)$product_ex_id . ", 
+                            customer_group_id = " . self::COMMERCIAL_7_GROUP_ID . ", 
+                            price = " . floatval($price_7) . ",
                             priority = 1,
                             date_start = '0000-00-00',
                             date_end = '0000-00-00'");
@@ -791,9 +845,24 @@ class ModelExtensionModuleImport1C extends Model {
                     $phone = ''; // Reset invalid phone
                 }
                 
-                // Determine customer group
+                // Determine customer group based on price_type
                 $price_type = intval(strval($user->price_type));
-                $customer_group_id = ($price_type == 7) ? self::WHOLESALE_CUSTOMER_GROUP_ID : self::RETAIL_CUSTOMER_GROUP_ID;
+                
+                // Map price_type to customer_group_id according to the requirements
+                switch ($price_type) {
+                    case 2:
+                        $customer_group_id = self::COMMERCIAL_2_GROUP_ID; // Commercial 2 (group_id=2)
+                        break;
+                    case 5:
+                        $customer_group_id = self::COMMERCIAL_5_GROUP_ID; // Commercial 5 (group_id=4)
+                        break;
+                    case 7:
+                        $customer_group_id = self::COMMERCIAL_7_GROUP_ID; // Commercial 7 (group_id=3)
+                        break;
+                    default:
+                        $customer_group_id = self::DEFAULT_CUSTOMER_GROUP_ID; // Default (group_id=1)
+                        break;
+                }
                 
                 // Get password from XML
                 $password = trim(strval($user->password));
