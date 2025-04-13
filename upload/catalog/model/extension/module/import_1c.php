@@ -22,6 +22,9 @@ class ModelExtensionModuleImport1C extends Model {
     const CATEGORY_NOINDEX = 1;
     const CATEGORY_COLUMN = 1;
     const MAX_CATEGORY_LEVELS = 10; // Support for up to 10 levels of categories
+    const DEFAULT_ATTRIBUTE_GROUP_ID = 372; // Default attribute group ID
+    const ATTRIBUTE_SORT_ORDER = 0;
+    const MAX_ATTRIBUTES = 6; // Support for up to 6 attributes
     
     // Validate product data
     private function validateProductData($mpn, $name) {
@@ -661,6 +664,9 @@ class ModelExtensionModuleImport1C extends Model {
                             date_end = '0000-00-00'");
                     }
                     
+                    // Process product attributes
+                    $this->processProductAttributes($product, $product_ex_id);
+                    
                     $created++;
                 } else {
                     // Update existing product with new data (name, manufacturer, and SEO)
@@ -705,6 +711,9 @@ class ModelExtensionModuleImport1C extends Model {
                                 `keyword` = '" . $this->db->escape($slug) . "'");
                         }
                         
+                        // Process product attributes
+                        $this->processProductAttributes($product, $product_ex_id);
+                        
                         $updated++;
                     }
                 }
@@ -721,6 +730,9 @@ class ModelExtensionModuleImport1C extends Model {
             // Get category statistics
             $category_stats = $this->getCategoryStats();
             
+            // Get attribute statistics
+            $attribute_stats = $this->getAttributeStats();
+            
             return [
                 'created' => $created, 
                 'updated' => $updated, 
@@ -729,7 +741,10 @@ class ModelExtensionModuleImport1C extends Model {
                 'manufacturers_processed' => $manufacturer_stats['manufacturers_processed'],
                 'manufacturers_created' => $manufacturer_stats['manufacturers_created'],
                 'categories_processed' => $category_stats['categories_processed'],
-                'categories_created' => $category_stats['categories_created']
+                'categories_created' => $category_stats['categories_created'],
+                'attributes_processed' => $attribute_stats['attributes_processed'],
+                'attributes_created' => $attribute_stats['attributes_created'],
+                'attribute_values_added' => $attribute_stats['attribute_values_added']
             ];
             
         } catch (Exception $e) {
@@ -744,6 +759,9 @@ class ModelExtensionModuleImport1C extends Model {
             // Get category statistics
             $category_stats = $this->getCategoryStats();
             
+            // Get attribute statistics
+            $attribute_stats = $this->getAttributeStats();
+            
             return [
                 'created' => $created, 
                 'updated' => $updated, 
@@ -753,7 +771,10 @@ class ModelExtensionModuleImport1C extends Model {
                 'manufacturers_processed' => $manufacturer_stats['manufacturers_processed'],
                 'manufacturers_created' => $manufacturer_stats['manufacturers_created'],
                 'categories_processed' => $category_stats['categories_processed'],
-                'categories_created' => $category_stats['categories_created']
+                'categories_created' => $category_stats['categories_created'],
+                'attributes_processed' => $attribute_stats['attributes_processed'],
+                'attributes_created' => $attribute_stats['attributes_created'],
+                'attribute_values_added' => $attribute_stats['attribute_values_added']
             ];
         }
     }
@@ -1647,6 +1668,125 @@ class ModelExtensionModuleImport1C extends Model {
             'manufacturers_processed' => $manufacturers_processed,
             'manufacturers_created' => $manufacturers_created,
             'manufacturers_removed' => $manufacturers_removed
+        ];
+    }
+    
+    /**
+     * Process product attributes from XML data
+     * Extracts attribute key-value pairs from XML tags and associates them with the product
+     * Creates missing attributes if needed
+     *
+     * @param object $product The product XML object
+     * @param int $product_id The product ID to associate attributes with
+     * @return array Statistics about processed attributes
+     */
+    private function processProductAttributes($product, $product_id) {
+        static $attributes_processed = 0;
+        static $attributes_created = 0;
+        static $attribute_values_added = 0;
+        static $attribute_cache = [];
+        
+        $stats = [
+            'processed' => 0,
+            'created' => 0,
+            'values_added' => 0
+        ];
+        
+        // Process each attribute pair
+        for ($i = 1; $i <= self::MAX_ATTRIBUTES; $i++) {
+            $attribute_key_tag = "attribute_{$i}";
+            $attribute_value_tag = "attribute_text_{$i}";
+            
+            // Skip if either key or value tag doesn't exist or is empty
+            if (!isset($product->$attribute_key_tag) || !isset($product->$attribute_value_tag) || 
+                empty(trim(strval($product->$attribute_key_tag))) || empty(trim(strval($product->$attribute_value_tag)))) {
+                continue;
+            }
+            
+            $attribute_name = trim(strval($product->$attribute_key_tag));
+            $attribute_value = trim(strval($product->$attribute_value_tag));
+            
+            // Skip empty attributes
+            if (empty($attribute_name) || empty($attribute_value)) {
+                continue;
+            }
+            
+            $stats['processed']++;
+            $attributes_processed++;
+            
+            // Get or create attribute
+            $attribute_id = 0;
+            
+            // Check cache first
+            if (isset($attribute_cache[$attribute_name])) {
+                $attribute_id = $attribute_cache[$attribute_name];
+            } else {
+                // Check if attribute exists
+                $attribute_query = $this->db->query("SELECT a.attribute_id FROM " . DB_PREFIX . "attribute a 
+                    JOIN " . DB_PREFIX . "attribute_description ad ON a.attribute_id = ad.attribute_id 
+                    WHERE ad.name = '" . $this->db->escape($attribute_name) . "' 
+                    AND ad.language_id = " . self::DEFAULT_LANGUAGE_ID);
+                
+                if ($attribute_query->num_rows > 0) {
+                    // Attribute exists
+                    $attribute_id = (int)$attribute_query->row['attribute_id'];
+                } else {
+                    // Create new attribute
+                    $this->debugLog("Creating new attribute: " . $attribute_name);
+                    $this->db->query("INSERT INTO " . DB_PREFIX . "attribute SET 
+                        attribute_group_id = " . self::DEFAULT_ATTRIBUTE_GROUP_ID . ", 
+                        sort_order = " . self::ATTRIBUTE_SORT_ORDER);
+                    
+                    $attribute_id = $this->db->getLastId();
+                    
+                    // Add attribute description
+                    $this->db->query("INSERT INTO " . DB_PREFIX . "attribute_description SET 
+                        attribute_id = " . (int)$attribute_id . ", 
+                        language_id = " . self::DEFAULT_LANGUAGE_ID . ", 
+                        name = '" . $this->db->escape($attribute_name) . "'");
+                    
+                    $stats['created']++;
+                    $attributes_created++;
+                }
+                
+                // Cache the attribute ID
+                $attribute_cache[$attribute_name] = $attribute_id;
+            }
+            
+            // Delete existing attribute values for this product and attribute
+            $this->db->query("DELETE FROM " . DB_PREFIX . "product_attribute 
+                WHERE product_id = " . (int)$product_id . " 
+                AND attribute_id = " . (int)$attribute_id . " 
+                AND language_id = " . self::DEFAULT_LANGUAGE_ID);
+            
+            // Add attribute value to product
+            $this->db->query("INSERT INTO " . DB_PREFIX . "product_attribute SET 
+                product_id = " . (int)$product_id . ", 
+                attribute_id = " . (int)$attribute_id . ", 
+                language_id = " . self::DEFAULT_LANGUAGE_ID . ", 
+                text = '" . $this->db->escape($attribute_value) . "'");
+            
+            $stats['values_added']++;
+            $attribute_values_added++;
+        }
+        
+        return $stats;
+    }
+    
+    /**
+     * Get statistics about attributes processed
+     *
+     * @return array Statistics about attributes
+     */
+    public function getAttributeStats() {
+        static $attributes_processed = 0;
+        static $attributes_created = 0;
+        static $attribute_values_added = 0;
+        
+        return [
+            'attributes_processed' => $attributes_processed,
+            'attributes_created' => $attributes_created,
+            'attribute_values_added' => $attribute_values_added
         ];
     }
     

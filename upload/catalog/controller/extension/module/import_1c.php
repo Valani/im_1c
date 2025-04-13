@@ -61,6 +61,9 @@ class ControllerExtensionModuleImport1C extends Controller {
             'categories_processed' => isset($products_result['categories_processed']) ? $products_result['categories_processed'] : 0,
             'categories_created' => isset($products_result['categories_created']) ? $products_result['categories_created'] : 0,
             'categories_removed' => isset($categories_cleanup_result['removed']) ? $categories_cleanup_result['removed'] : 0,
+            'attributes_processed' => isset($products_result['attributes_processed']) ? $products_result['attributes_processed'] : 0,
+            'attributes_created' => isset($products_result['attributes_created']) ? $products_result['attributes_created'] : 0,
+            'attribute_values_added' => isset($products_result['attribute_values_added']) ? $products_result['attribute_values_added'] : 0,
             'orders_exported' => isset($orders_result['exported']) ? $orders_result['exported'] : 0,
             'unused_images_found' => isset($unused_images_result['found']) ? $unused_images_result['found'] : 0,
             'errors' => $prices_result['errors'] + $quantities_result['errors'] + $products_result['errors'] + 
