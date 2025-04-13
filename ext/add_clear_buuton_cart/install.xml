@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Add Clear Cart Button</name>
+    <version>1.0</version>
+    <author>andrew_pv</author>
+    <code>clear_cart_button</code>
+    <!-- Add the clear cart button to the cart page -->
+    <file path="catalog/view/theme/oct_showcase/template/checkout/oct_smartcheckout/smartcheckout.twig">
+        <operation>
+            <search><![CDATA[<div id="cart-table" class="mb-3 content-block fsz-14 order-{{ cart_block_sort }}">]]></search>
+            <add position="before"><![CDATA[
+                <div class="clearfix mb-3 text-end">
+                    <button id="clear-cart-button" type="button" class="sc-btn sc-btn-danger" onclick="clearCartConfirm();"><i class="fa fa-trash-o me-2"></i>{{ text_clear_cart }}</button>
+                </div>
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- Add the clear cart functionality to the JavaScript section -->
+    <file path="catalog/view/theme/oct_showcase/template/checkout/oct_smartcheckout/smartcheckout.twig">
+        <operation>
+            <search><![CDATA[<script>]]></search>
+            <add position="after"><![CDATA[
+    // Clear cart confirmation
+    function clearCartConfirm() {
+        if (confirm("{{ text_clear_cart_confirm }}")) {
+            clearCart();
+        }
+    }
+    
+    // Clear cart function
+    function clearCart() {
+        $.ajax({
+            url: 'index.php?route=checkout/oct_smartcheckout/clearCart',
+            type: 'get',
+            dataType: 'json',
+            beforeSend: function() {
+                $('#clear-cart-button').prop('disabled', true);
+                masked('body', true);
+            },
+            complete: function() {
+                $('#clear-cart-button').prop('disabled', false);
+                masked('body', false);
+            },
+            success: function(json) {
+                if (json['success']) {
+                    location.reload();
+                }
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                console.error('Error clearing cart');
+            }
+        });
+    }
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- Add the controller method for clearing the cart -->
+    <file path="catalog/controller/checkout/oct_smartcheckout.php">
+        <operation>
+            <search><![CDATA[class ControllerCheckoutOctSmartcheckout extends Controller {]]></search>
+            <add position="after"><![CDATA[
+    public function clearCart() {
+        $json = [];
+        
+        if ($this->cart->hasProducts()) {
+            $this->cart->clear();
+            $this->session->data['vouchers'] = [];
+            
+            // Clear coupon, voucher, reward
+            unset($this->session->data['coupon']);
+            unset($this->session->data['voucher']);
+            unset($this->session->data['reward']);
+            
+            $json['success'] = true;
+        }
+        
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($json));
+    }
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- Add language variables -->
+    <file path="catalog/language/uk-ua/octemplates/module/oct_smartcheckout.php">
+        <operation>
+            <search><![CDATA[<?php]]></search>
+            <add position="after"><![CDATA[
+// Clear Cart Button Text
+$_['text_clear_cart']         = 'Clear Cart';
+$_['text_clear_cart_confirm'] = 'Are you sure you want to clear your cart?';
+            ]]></add>
+        </operation>
+    </file>
+    
+    <!-- Add language variables for english -->
+    <file path="catalog/language/uk-ua/octemplates/module/oct_smartcheckout.php">
+        <operation>
+            <search><![CDATA[<?php]]></search>
+            <add position="after"><![CDATA[
+// Clear Cart Button Text
+$_['text_clear_cart']         = 'Clear Cart';
+$_['text_clear_cart_confirm'] = 'Are you sure you want to clear your cart?';
+            ]]></add>
+        </operation>
+    </file>
+</modification>

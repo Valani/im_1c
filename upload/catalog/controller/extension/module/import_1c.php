@@ -79,20 +79,20 @@ class ControllerExtensionModuleImport1C extends Controller {
             $response['skipped_users_count'] = count($users_result['skipped_users']);
             $response['skipped_users_sample'] = array_slice($users_result['skipped_users'], 0, 10);
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
-            $response['skipped_users_log'] = 'See detailed log in ' . $log_dir . 'user_import_' . date('Y-m-d') . '.log';
+            $response['skipped_users_log'] = 'See detailed log in ' . $log_dir . 'user_import.log';
         }
         
         // Include skipped products information if available
         if (isset($products_result['skipped_products_count'])) {
             $response['skipped_products_count'] = $products_result['skipped_products_count'];
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
-            $response['skipped_products_log'] = 'See detailed log in ' . $log_dir . 'product_import_skipped_' . date('Y-m-d') . '.log';
+            $response['skipped_products_log'] = 'See detailed log in ' . $log_dir . 'product_import_skipped.log';
         }
         
         // Include unused images log file path if available
         if (isset($unused_images_result['found']) && $unused_images_result['found'] > 0) {
             $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
-            $response['unused_images_log'] = 'See detailed log in ' . $log_dir . 'unused_images_' . date('Y-m-d') . '.log';
+            $response['unused_images_log'] = 'See detailed log in ' . $log_dir . 'unused_images.log';
         }
         
         // Include manufacturer cleanup details if available

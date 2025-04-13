@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+	<name>Головна хлібні крихти</name>
+	<code>home-breadcrumb</code>
+	<version>1.0</version>
+	<author>andrew_pv</author>
+	<file path="catalog/language/uk-ua/uk-ua.php">
+		<operation>
+		  <search error="log"><![CDATA[$_['text_home']             = '<i class="fa fa-home"></i>';]]></search>
+		  <add position="replace"><![CDATA[$_['text_home']             = 'Головна';]]></add>
+		</operation>
+	</file>
+</modification>

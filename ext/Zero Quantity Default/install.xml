@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Zero Quantity Default</name>
+    <code>zero_quantity_default</code>
+    <version>1.0.0</version>
+    <author>andrew_pv</author>
+    <file path="catalog/view/theme/*/template/product/product.twig">
+        <operation>
+            <search><![CDATA[<input type="text" name="quantity" value="{{ minimum }}" size="2" id="input-quantity" class="form-control"]]></search>
+            <add position="replace"><![CDATA[<input type="text" name="quantity" value="0" size="2" id="input-quantity" class="form-control"]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/*/product_card.twig">
+        <operation>
+            <search><![CDATA[<input type="text" class="form-control" name="quantity" value="1"]]></search>
+            <add position="replace"><![CDATA[<input type="text" class="form-control" name="quantity" value="0"]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/product/category.twig">
+        <operation>
+            <search><![CDATA[<input type="text" class="form-control" name="quantity" value="1"]]></search>
+            <add position="replace"><![CDATA[<input type="text" class="form-control" name="quantity" value="0"]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/common/cart.twig">
+        <operation>
+            <search><![CDATA[<input type="text" name="quantity" value="{{ product.quantity }}" class="form-control"]]></search>
+            <add position="replace"><![CDATA[<input type="text" name="quantity" value="{{ product.quantity }}" min="0" class="form-control"]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/theme/*/template/checkout/cart.twig">
+        <operation>
+            <search><![CDATA[<input type="text" name="quantity[{{ product.cart_id }}]" value="{{ product.quantity }}" class="form-control"]]></search>
+            <add position="replace"><![CDATA[<input type="text" name="quantity[{{ product.cart_id }}]" value="{{ product.quantity }}" min="0" class="form-control"]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/javascript/common.js">
+        <operation>
+            <search><![CDATA[$('#product input[name=\'quantity\']').on('input change', function() {]]></search>
+            <add position="before"><![CDATA[
+    // Disable the minus button when quantity is 0
+    $('#product .sc-product-quantity, .sc-module-quantity').on('input change', 'input[name=\'quantity\']', function() {
+        var $this = $(this);
+        var value = parseInt($this.val());
+        
+        if (value <= 0 || isNaN(value)) {
+            $this.closest('.sc-product-quantity, .sc-module-quantity').find('.sc-minus').prop('disabled', true);
+        } else {
+            $this.closest('.sc-product-quantity, .sc-module-quantity').find('.sc-minus').prop('disabled', false);
+        }
+    });
+    
+    // Initialize minus button state on page load
+    $('#product .sc-product-quantity input[name=\'quantity\'], .sc-module-quantity input[name=\'quantity\']').trigger('change');
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/cart.php">
+        <operation>
+            <search><![CDATA[if (!empty($this->request->post['quantity'])) {]]></search>
+            <add position="after"><![CDATA[
+            // Prevent adding product to cart with quantity 0
+            if ((int)$this->request->post['quantity'] <= 0) {
+                $json['error']['quantity'] = $this->language->get('error_quantity');
+            }
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/cart.php">
+        <operation>
+            <search><![CDATA[if (!empty($this->request->post['quantity']) && ((int)$this->request->post['quantity'] < $product_info['minimum'])) {]]></search>
+            <add position="replace"><![CDATA[if (((int)$this->request->post['quantity'] <= 0) || (!empty($this->request->post['quantity']) && ((int)$this->request->post['quantity'] < $product_info['minimum']))) {]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/*/product.php">
+        <operation>
+            <search><![CDATA[if (isset($this->request->post['quantity']) && ((int)$this->request->post['quantity'] < $product_info['minimum'])) {]]></search>
+            <add position="replace"><![CDATA[if ((isset($this->request->post['quantity']) && (int)$this->request->post['quantity'] <= 0) || (isset($this->request->post['quantity']) && ((int)$this->request->post['quantity'] < $product_info['minimum']))) {]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/javascript/common.js">
+        <operation>
+            <search><![CDATA[$('.sc-module-quantity .sc-minus, .sc-product-quantity .sc-minus').on('click', function() {]]></search>
+            <add position="replace"><![CDATA[$('.sc-module-quantity .sc-minus, .sc-product-quantity .sc-minus').on('click', function() {
+            if ($(this).prop('disabled')) {
+                return;
+            }
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/javascript/common.js">
+        <operation>
+            <search><![CDATA[if (quantity > 1) {]]></search>
+            <add position="replace"><![CDATA[if (quantity > 0) {]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/javascript/common.js">
+        <operation>
+            <search><![CDATA[$(input).val(parseInt($(input).val()) - 1);]]></search>
+            <add position="after"><![CDATA[
+            // Disable minus button when quantity reaches 0
+            if (parseInt($(input).val()) <= 0) {
+                $(this).prop('disabled', true);
+            }
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/view/javascript/common.js">
+        <operation>
+            <search><![CDATA[$('.sc-module-quantity .sc-plus, .sc-product-quantity .sc-plus').on('click', function() {]]></search>
+            <add position="replace"><![CDATA[$('.sc-module-quantity .sc-plus, .sc-product-quantity .sc-plus').on('click', function() {
+            var $minusBtn = $(this).siblings('.sc-minus');
+            $minusBtn.prop('disabled', false);
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/checkout/cart.php">
+        <operation>
+            <search><![CDATA[foreach ($this->request->post['quantity'] as $key => $value) {]]></search>
+            <add position="after"><![CDATA[
+                // Skip updating cart items with quantity 0
+                if ((int)$value <= 0) {
+                    continue;
+                }
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/controller/*/cart.php">
+        <operation>
+            <search><![CDATA[public function add() {]]></search>
+            <add position="after"><![CDATA[
+        // Prevent adding product with quantity 0
+        if (isset($this->request->post['quantity']) && (int)$this->request->post['quantity'] <= 0) {
+            $json['error']['quantity'] = $this->language->get('error_quantity');
+            
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
+            ]]></add>
+        </operation>
+    </file>
+    <file path="catalog/language/*/*/text_general.php">
+        <operation>
+            <search><![CDATA[// Text]]></search>
+            <add position="after"><![CDATA[
+$_['error_quantity']     = 'Quantity must be greater than 0!';
+            ]]></add>
+        </operation>
+    </file>
+</modification>

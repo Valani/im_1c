@@ -790,15 +790,8 @@ class ModelExtensionModuleImport1C extends Model {
             return;
         }
         
-        // Log file path - use system/storage/logs if DIR_LOGS constant is not available
-        $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
-        
-        // Ensure log directory exists
-        if (!is_dir($log_dir)) {
-            @mkdir($log_dir, 0755, true);
-        }
-        
-        $log_file = $log_dir . 'product_import_skipped_' . date('Y-m-d') . '.log';
+        // Clear log file and get its path
+        $log_file = $this->clearLogFile('product_import_skipped');
         
         // Log message
         $log_message = date('Y-m-d H:i:s') . " Products skipped during import:\n" . 
@@ -806,6 +799,9 @@ class ModelExtensionModuleImport1C extends Model {
         
         // Write to log using file_put_contents with error suppression
         @file_put_contents($log_file, $log_message, FILE_APPEND);
+        
+        // Copy to web-accessible directory
+        $this->copyLogToWeb('product_import_skipped');
         
         // Fallback to error_log if file_put_contents fails
         if (!file_exists($log_file)) {
@@ -975,13 +971,69 @@ class ModelExtensionModuleImport1C extends Model {
     }
     
     // Debug function to log queries
-    private function debugLog($message) {
+    /**
+     * Clears a log file before writing to it and copies it to web-accessible directory
+     * 
+     * @param string $log_name Base name of the log file
+     * @return string Full path to the cleared log file
+     */
+    private function clearLogFile($log_name) {
         $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+        
+        // Ensure log directory exists
         if (!is_dir($log_dir)) {
             @mkdir($log_dir, 0755, true);
         }
-        $log_file = $log_dir . 'sql_debug_' . date('Y-m-d') . '.log';
+        
+        $log_file = $log_dir . $log_name . '.log';
+        
+        // Clear the file by writing an empty string
+        @file_put_contents($log_file, '');
+        
+        // Copy to web-accessible directory
+        $web_accessible_dir = '/feniks-lviv.com.ua/www/work/';
+        
+        // Ensure the web-accessible directory exists
+        if (!is_dir($web_accessible_dir)) {
+            @mkdir($web_accessible_dir, 0755, true);
+        }
+        
+        $web_log_file = $web_accessible_dir . $log_name . '.log';
+        
+        // Create an empty file in the web-accessible directory
+        @file_put_contents($web_log_file, '');
+        
+        return $log_file;
+    }
+    
+    /**
+     * Copies log file to web-accessible directory after writing is complete
+     * 
+     * @param string $log_name Base name of the log file
+     * @return void
+     */
+    private function copyLogToWeb($log_name) {
+        $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
+        $log_file = $log_dir . $log_name . '.log';
+        
+        $web_accessible_dir = '/feniks-lviv.com.ua/www/work/';
+        $web_log_file = $web_accessible_dir . $log_name . '.log';
+        
+        // Copy the log file to the web-accessible directory
+        if (file_exists($log_file)) {
+            @copy($log_file, $web_log_file);
+        }
+    }
+    
+    private function debugLog($message) {
+        // Get the cleared log file path
+        $log_file = $this->clearLogFile('sql_debug');
+        
+        // Append the message to the cleared file
         @file_put_contents($log_file, date('Y-m-d H:i:s') . " " . $message . "\n\n", FILE_APPEND);
+        
+        // Copy to web-accessible directory
+        $this->copyLogToWeb('sql_debug');
     }
     
     // Import users from XML file
@@ -1174,15 +1226,8 @@ class ModelExtensionModuleImport1C extends Model {
             
             // Write skipped users log to file for debugging
             if (!empty($skipped_users_log)) {
-                // Log file path - use system/storage/logs if DIR_LOGS constant is not available
-                $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
-                
-                // Ensure log directory exists
-                if (!is_dir($log_dir)) {
-                    @mkdir($log_dir, 0755, true);
-                }
-                
-                $log_file = $log_dir . 'user_import_' . date('Y-m-d') . '.log';
+                // Clear log file and get its path
+                $log_file = $this->clearLogFile('user_import');
                 
                 // Log message
                 $log_message = date('Y-m-d H:i:s') . " User import details:\n" . 
@@ -1190,6 +1235,9 @@ class ModelExtensionModuleImport1C extends Model {
                 
                 // Write to log using file_put_contents with error suppression
                 @file_put_contents($log_file, $log_message, FILE_APPEND);
+                
+                // Copy to web-accessible directory
+                $this->copyLogToWeb('user_import');
                 
                 // Fallback to error_log if file_put_contents fails
                 if (!file_exists($log_file)) {
@@ -1915,15 +1963,8 @@ class ModelExtensionModuleImport1C extends Model {
             
             // Create log of unused images
             if (!empty($unused_images)) {
-                // Log file path - use system/storage/logs if DIR_LOGS constant is not available
-                $log_dir = defined('DIR_LOGS') ? DIR_LOGS : DIR_SYSTEM . 'storage/logs/';
-                
-                // Ensure log directory exists
-                if (!is_dir($log_dir)) {
-                    @mkdir($log_dir, 0755, true);
-                }
-                
-                $log_file = $log_dir . 'unused_images_' . date('Y-m-d') . '.log';
+                // Clear log file and get its path
+                $log_file = $this->clearLogFile('unused_images');
                 
                 // Create a detailed log message with each image on a new line
                 $log_message = date('Y-m-d H:i:s') . " - Found " . count($unused_images) . " unused images:\n\n";
@@ -1937,6 +1978,9 @@ class ModelExtensionModuleImport1C extends Model {
                 
                 // Write to log using file_put_contents with error suppression
                 @file_put_contents($log_file, $log_message, FILE_APPEND);
+                
+                // Copy to web-accessible directory
+                $this->copyLogToWeb('unused_images');
                 
                 // Fallback to error_log if file_put_contents fails
                 if (!file_exists($log_file)) {

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<modification>
+	<name>Add stock quantity</name>
+	<code>stock-quantity</code>
+	<version>1.0</version>
+	<author>andrew_pv</author>
+	<file path="catalog/controller/product/product.php">
+		<operation>
+		  <search error="log"><![CDATA[$data['stock'] = $this->language->get('text_instock');]]></search>
+		  <add position="replace"><![CDATA[$data['stock'] = $this->language->get('text_instock') . ': ' . (int)$product_info['quantity'];]]></add>
+		</operation>
+	</file>
+	<file path="catalog/view/theme/oct_showcase/template/product/category.twig">
+		<operation>
+			<search><![CDATA[{% if product.rating is not same as(false) %}]]></search>
+			<add position="before"><![CDATA[
+	<div>{{ product.stock }}</div>
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA[{% if product.rating is not same as(false) %}]]></search>
+			<add position="replace"><![CDATA[{% if false and product.rating is not same as(false) %}]]></add>
+		</operation>
+	</file>
+	<file path="catalog/controller/product/category.php">
+		<operation>
+			<search><![CDATA[if ($result['image']) {]]></search>
+			<add position="before"><![CDATA[
+				$current_product_info = $this->model_catalog_product->getProduct($result['product_id']);
+				$current_stock = '';
+				if ($current_product_info['quantity'] <= 0) {
+					$current_stock = $this->language->get('text_outstock');
+				} else {
+					$current_stock = $this->language->get('text_instock') . ': ' . (int)$current_product_info['quantity'];
+				}
+			]]></add>
+		</operation>
+		<operation>
+			<search><![CDATA['href'        => $this->url->link('product/product', 'path=' . $this->request->get['path'] . '&product_id=' . $result['product_id'] . $url)]]></search>
+			<add position="after"><![CDATA[,
+					'stock'       => $current_stock]]></add>
+		</operation>
+	</file>
+	<file path="catalog/language/uk-ua/product/category.php">
+		<operation>
+			<search><![CDATA[<?php]]></search>
+			<add position="after"><![CDATA[
+				$_['text_instock']     = 'В наявності';
+				$_['text_outstock']      = 'Немає в наявності';
+			]]></add>
+		</operation>
+	</file>
+</modification>
